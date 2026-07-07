@@ -1,0 +1,19 @@
+# Build fresh inside the image — never copy host artifacts (especially the
+# OneDrive-poisoned .next/standalone) into the build context.
+node_modules
+.next
+out
+
+# Local data (dev database + uploaded photos) must not go into the image
+data
+
+# Env files — real config is injected at runtime by docker-compose
+.env
+.env.*
+!.env.example
+
+# Misc
+.git
+*.log
+.DS_Store
+npm-debug.log*

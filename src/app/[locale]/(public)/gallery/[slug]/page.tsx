@@ -1,0 +1,84 @@
+import { notFound } from "next/navigation";
+import { getLocale, getTranslations } from "next-intl/server";
+import { prisma } from "@/lib/db";
+import { pickText, formatPhotoCredit } from "@/lib/content";
+import { photoUrls } from "@/lib/images";
+import { formatPhotoExif } from "@/lib/exif";
+import { Link } from "@/i18n/navigation";
+import AlbumViewer, { type AlbumPhoto } from "@/components/gallery/AlbumViewer";
+
+export const dynamic = "force-dynamic";
+
+export default async function AlbumPage({
+  params
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const locale = await getLocale();
+  const t = await getTranslations("gallery");
+
+  const event = await prisma.event.findUnique({
+    where: { slug },
+    include: {
+      photos: { orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] }
+    }
+  });
+  // Unpublished events are fully hidden from the public.
+  if (!event || !event.published) notFound();
+
+  const photos: AlbumPhoto[] = event.photos.map((p) => {
+    const urls = photoUrls(event.id, p.id);
+    return {
+      id: p.id,
+      thumb: urls.thumb,
+      med: urls.med,
+      full: urls.full,
+      caption: formatPhotoCredit(p.cosplayerCn, p.characterName),
+      width: p.width,
+      height: p.height,
+      exif: formatPhotoExif(p)
+    };
+  });
+
+  const description = pickText(locale, event.descriptionEn, event.descriptionZh);
+
+  return (
+    <div className="flex flex-col gap-6 rounded-2xl border border-fg/10 bg-page/85 p-6 sm:p-8">
+      <div>
+        <Link
+          href="/gallery"
+          className="text-sm text-fg-subtle hover:text-fg"
+        >
+          ← {t("backToGallery")}
+        </Link>
+        <h1 className="mt-2 text-3xl font-bold">
+          {pickText(locale, event.titleEn, event.titleZh)}
+        </h1>
+        <p className="mt-1 text-sm text-fg-subtle">
+          {[
+            event.date ? event.date.toISOString().slice(0, 10) : null,
+            event.location || null,
+            t("photosCount", { count: photos.length })
+          ]
+            .filter(Boolean)
+            .join(" · ")}
+        </p>
+        {description && (
+          <p className="mt-3 max-w-2xl whitespace-pre-line text-fg-muted">
+            {description}
+          </p>
+        )}
+      </div>
+
+      <AlbumViewer
+        photos={photos}
+        labels={{
+          close: t("close"),
+          previous: t("previous"),
+          next: t("next")
+        }}
+      />
+    </div>
+  );
+}

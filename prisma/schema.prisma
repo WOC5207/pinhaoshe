@@ -1,0 +1,136 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
+
+// A gallery event = one photo album (a con, a shoot, etc.)
+model Event {
+  id            String    @id @default(cuid())
+  slug          String    @unique
+  titleEn       String
+  titleZh       String
+  descriptionEn String    @default("")
+  descriptionZh String    @default("")
+  location      String    @default("")
+  date          DateTime?
+  published     Boolean   @default(false)
+  coverPhotoId  String?   @unique
+  coverPhoto    Photo?    @relation("EventCover", fields: [coverPhotoId], references: [id], onDelete: SetNull)
+  photos        Photo[]   @relation("EventPhotos")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Photo {
+  id           String   @id @default(cuid())
+  eventId      String
+  event        Event    @relation("EventPhotos", fields: [eventId], references: [id], onDelete: Cascade)
+  // Base name (no extension) of the stored files; sizes live at
+  // <PHOTOS_DIR>/<eventId>/<filename>-{orig,full,med,thumb}.<ext>
+  filename     String
+  originalName String
+  width        Int
+  height       Int
+  // Photo credit, shown identically on both the zh and en sites (these are
+  // names, not translatable content).
+  cosplayerCn   String  @default("")
+  characterName String  @default("")
+  // EXIF read from the uploaded original at upload time (before it's
+  // stripped for the displayed renditions). Null when the file had none.
+  exifFocalLengthMm Float?
+  exifAperture      Float?
+  exifExposureTime  Float?
+  exifIso           Int?
+  exifTakenAt       DateTime?
+  exifCameraModel   String?
+  exifLensModel     String?
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  coverOf      Event?   @relation("EventCover")
+}
+
+// A bookable photoshoot event with time slots (separate from gallery events)
+model BookingEvent {
+  id            String     @id @default(cuid())
+  // Unguessable token used in the shareable public URL
+  token         String     @unique
+  titleEn       String
+  titleZh       String
+  descriptionEn String     @default("")
+  descriptionZh String     @default("")
+  location      String     @default("")
+  date          DateTime
+  open          Boolean    @default(true)
+  slots         TimeSlot[]
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+}
+
+model TimeSlot {
+  id             String       @id @default(cuid())
+  bookingEventId String
+  bookingEvent   BookingEvent @relation(fields: [bookingEventId], references: [id], onDelete: Cascade)
+  startTime      DateTime
+  endTime        DateTime
+  capacity       Int          @default(1)
+  bookings       Booking[]
+}
+
+// Singleton row (id is always "site") holding admin-customizable site content.
+model SiteSettings {
+  id                  String   @id @default("site")
+  siteTitleEn         String   @default("")
+  siteTitleZh         String   @default("")
+  // Homepage hero headline/subtitle. Empty = use the built-in default copy.
+  homeTitleEn         String   @default("")
+  homeTitleZh         String   @default("")
+  homeSubtitleEn      String   @default("")
+  homeSubtitleZh      String   @default("")
+  // Empty = use the default dark theme color. Otherwise a CSS hex like "#0a0a0a".
+  backgroundColor     String   @default("")
+  // Empty = no background image. Otherwise a token; file lives at
+  // <PHOTOS_DIR>/_site/<token>.webp, served via /api/site/<token>.webp.
+  backgroundImage     String   @default("")
+  // Logo shown in the admin header (links to the homepage). Empty = none.
+  // Same token/storage scheme as backgroundImage.
+  logo                String   @default("")
+  updatedAt           DateTime @updatedAt
+}
+
+// Admin-managed "upcoming show" quick links, shown in the homepage sidebar.
+// Not tied to bookings/gallery — just a curated list of conventions etc.
+model QuickLink {
+  id        String    @id @default(cuid())
+  titleEn   String
+  titleZh   String
+  url       String    @default("")
+  date      DateTime?
+  sortOrder Int       @default(0)
+  createdAt DateTime  @default(now())
+}
+
+model Booking {
+  id          String   @id @default(cuid())
+  timeSlotId  String
+  timeSlot    TimeSlot @relation(fields: [timeSlotId], references: [id], onDelete: Cascade)
+  name        String
+  email       String   @default("")
+  phone       String   @default("")
+  notes       String   @default("")
+  // "confirmed" | "cancelled" (SQLite has no enums)
+  status      String   @default("confirmed")
+  // Private token for the visitor's self-cancel link
+  cancelToken String   @unique
+  createdAt   DateTime @default(now())
+}

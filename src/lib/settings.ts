@@ -1,0 +1,79 @@
+import "server-only";
+import { cache } from "react";
+import { prisma } from "@/lib/db";
+import { pickText } from "@/lib/content";
+
+export const SITE_SETTINGS_ID = "site";
+
+export interface SiteSettings {
+  id: string;
+  siteTitleEn: string;
+  siteTitleZh: string;
+  homeTitleEn: string;
+  homeTitleZh: string;
+  homeSubtitleEn: string;
+  homeSubtitleZh: string;
+  backgroundColor: string;
+  backgroundImage: string;
+  logo: string;
+}
+
+const DEFAULTS: SiteSettings = {
+  id: SITE_SETTINGS_ID,
+  siteTitleEn: "",
+  siteTitleZh: "",
+  homeTitleEn: "",
+  homeTitleZh: "",
+  homeSubtitleEn: "",
+  homeSubtitleZh: "",
+  backgroundColor: "",
+  backgroundImage: "",
+  logo: ""
+};
+
+/**
+ * The single settings row, cached per-request so the layout and page can both
+ * read it without a duplicate query. Returns sensible defaults before the
+ * admin has saved anything.
+ */
+export const getSiteSettings = cache(async (): Promise<SiteSettings> => {
+  const row = await prisma.siteSettings.findUnique({
+    where: { id: SITE_SETTINGS_ID }
+  });
+  return row ?? DEFAULTS;
+});
+
+/**
+ * Resolve the site's brand title for a locale, falling back to the other
+ * language and finally to the caller-supplied default (the i18n siteName).
+ */
+export function resolveSiteTitle(
+  settings: SiteSettings,
+  locale: string,
+  fallback: string
+): string {
+  return pickText(locale, settings.siteTitleEn, settings.siteTitleZh) || fallback;
+}
+
+/**
+ * Resolve the homepage hero headline for a locale, falling back to the other
+ * language and finally to the caller-supplied default (the i18n copy).
+ */
+export function resolveHomeTitle(
+  settings: SiteSettings,
+  locale: string,
+  fallback: string
+): string {
+  return pickText(locale, settings.homeTitleEn, settings.homeTitleZh) || fallback;
+}
+
+/** Same as resolveHomeTitle, for the hero subtitle. */
+export function resolveHomeSubtitle(
+  settings: SiteSettings,
+  locale: string,
+  fallback: string
+): string {
+  return (
+    pickText(locale, settings.homeSubtitleEn, settings.homeSubtitleZh) || fallback
+  );
+}
