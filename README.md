@@ -72,8 +72,9 @@ and run: `openssl rand -base64 32`
 3. Click through and **Build**. The first build downloads images and compiles
    the app — expect **5–15 minutes** on a DS920+. Later rebuilds are faster.
 4. When the project is running, the app listens on **port 3000**. The
-   `data/photos` and `data/db` folders are created next to the compose file —
-   these are your persistent volumes; the container itself is disposable.
+   `data/photos` and `data/db` folders (already present next to the compose
+   file from the repo) are your persistent volumes; the container itself is
+   disposable.
 
 **If the build fails or the NAS struggles** (low RAM): build the image on a PC
 with Docker instead:
