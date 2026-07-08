@@ -5,6 +5,7 @@ import { pickText, formatCredits } from "@/lib/content";
 import { photoUrls } from "@/lib/images";
 import { formatDateRange } from "@/lib/datetime";
 import { formatPhotoExif } from "@/lib/exif";
+import { socialPlatformLabel } from "@/lib/social";
 import { Link } from "@/i18n/navigation";
 import AlbumViewer, { type AlbumPhoto } from "@/components/gallery/AlbumViewer";
 
@@ -24,7 +25,12 @@ export default async function AlbumPage({
     include: {
       photos: {
         orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
-        include: { credits: { orderBy: { sortOrder: "asc" } } }
+        include: {
+          credits: {
+            orderBy: { sortOrder: "asc" },
+            include: { socialLinks: { orderBy: { sortOrder: "asc" } } }
+          }
+        }
       }
     }
   });
@@ -39,6 +45,12 @@ export default async function AlbumPage({
       med: urls.med,
       full: urls.full,
       caption: formatCredits(p.credits),
+      socialLinks: p.credits.flatMap((c) =>
+        c.socialLinks.map((s) => ({
+          label: socialPlatformLabel(locale, s.platform),
+          url: s.url
+        }))
+      ),
       width: p.width,
       height: p.height,
       exif: formatPhotoExif(p)

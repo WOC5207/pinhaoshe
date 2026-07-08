@@ -7,6 +7,8 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { isAdmin } from "@/lib/auth";
 import { deleteEventFiles, deletePhotoFiles } from "@/lib/images";
+import { parseCreditsJson } from "@/lib/photoCredits";
+import { parseShutterSpeed } from "@/lib/exif";
 
 export type EventFormState = { error?: "validation" | "unknown"; ok?: boolean };
 
@@ -174,39 +176,87 @@ export async function deleteEvent(formData: FormData): Promise<void> {
 }
 
 /**
- * Replaces all of a photo's credits at once. The form submits parallel
- * `cosplayerCn`/`characterName` fields (one pair per repeatable row); rows
- * with a blank CN are dropped (CN is the only required part of a credit).
+ * Replaces all of a photo's credits (and each credit's social links) at
+ * once, from the JSON-encoded `creditsJson` field the admin UI submits.
+ * Nested social links can't be built with a plain createMany (it only
+ * inserts flat rows into one table), so each credit is its own create call
+ * inside the transaction instead.
  */
 export async function updatePhotoCredits(formData: FormData): Promise<void> {
   await guard();
   const photoId = formData.get("photoId");
   if (typeof photoId !== "string") return;
 
-  const cns = formData.getAll("cosplayerCn").map(String);
-  const chars = formData.getAll("characterName").map(String);
-  const pairs = cns
-    .map((cn, i) => ({
-      cosplayerCn: cn.trim().slice(0, 200),
-      characterName: (chars[i] ?? "").trim().slice(0, 200)
-    }))
-    .filter((p) => p.cosplayerCn.length > 0);
+  const credits = parseCreditsJson(formData.get("creditsJson"));
 
   await prisma.$transaction([
     prisma.photoCredit.deleteMany({ where: { photoId } }),
-    ...(pairs.length > 0
-      ? [
-          prisma.photoCredit.createMany({
-            data: pairs.map((p, i) => ({
-              photoId,
-              cosplayerCn: p.cosplayerCn,
-              characterName: p.characterName,
-              sortOrder: i
+    ...credits.map((c, i) =>
+      prisma.photoCredit.create({
+        data: {
+          photoId,
+          cosplayerCn: c.cosplayerCn,
+          characterName: c.characterName,
+          sortOrder: i,
+          socialLinks: {
+            create: c.socialLinks.map((s, j) => ({
+              platform: s.platform,
+              url: s.url,
+              sortOrder: j
             }))
-          })
-        ]
-      : [])
+          }
+        }
+      })
+    )
   ]);
+  revalidatePath("/", "layout");
+}
+
+/**
+ * Fills in or corrects a photo's EXIF fields by hand — for photos that had
+ * none embedded (screenshots, re-exports) or where the camera got it wrong.
+ * Every field is optional; a blank input clears that field back to unknown
+ * rather than leaving the old value in place.
+ */
+export async function updatePhotoExif(formData: FormData): Promise<void> {
+  await guard();
+  const photoId = formData.get("photoId");
+  if (typeof photoId !== "string") return;
+
+  function numberOrNull(name: string): number | null {
+    const raw = String(formData.get(name) ?? "").trim();
+    if (!raw) return null;
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  const focalLengthMm = numberOrNull("exifFocalLengthMm");
+  const aperture = numberOrNull("exifAperture");
+  const iso = numberOrNull("exifIso");
+  const exposureTime = parseShutterSpeed(
+    String(formData.get("exifExposureTime") ?? "")
+  );
+  const takenAtRaw = String(formData.get("exifTakenAt") ?? "").trim();
+  const takenAt = takenAtRaw ? new Date(`${takenAtRaw}T00:00:00Z`) : null;
+  const cameraModel =
+    String(formData.get("exifCameraModel") ?? "").trim().slice(0, 200) || null;
+  const lensModel =
+    String(formData.get("exifLensModel") ?? "").trim().slice(0, 200) || null;
+
+  await prisma.photo
+    .update({
+      where: { id: photoId },
+      data: {
+        exifFocalLengthMm: focalLengthMm,
+        exifAperture: aperture,
+        exifExposureTime: exposureTime,
+        exifIso: iso !== null ? Math.round(iso) : null,
+        exifTakenAt: takenAt && !isNaN(takenAt.getTime()) ? takenAt : null,
+        exifCameraModel: cameraModel,
+        exifLensModel: lensModel
+      }
+    })
+    .catch(() => {});
   revalidatePath("/", "layout");
 }
 

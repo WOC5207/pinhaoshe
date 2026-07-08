@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { isAdmin } from "@/lib/auth";
 import { config } from "@/lib/config";
 import { ALLOWED_UPLOAD_TYPES, processAndStorePhoto } from "@/lib/images";
+import { parseCreditsJson } from "@/lib/photoCredits";
 
 export async function POST(req: NextRequest) {
   if (!(await isAdmin())) {
@@ -48,17 +49,8 @@ export async function POST(req: NextRequest) {
     _max: { sortOrder: true }
   });
 
-  // Parallel arrays: one (cosplayerCn, characterName) pair per credit, shared
-  // across the whole batch this file was uploaded as part of. Rows with a
-  // blank CN are dropped (CN is the only required part of a credit).
-  const cns = form.getAll("cosplayerCn").map(String);
-  const chars = form.getAll("characterName").map(String);
-  const credits = cns
-    .map((cn, i) => ({
-      cosplayerCn: cn.trim().slice(0, 200),
-      characterName: (chars[i] ?? "").trim().slice(0, 200)
-    }))
-    .filter((c) => c.cosplayerCn.length > 0);
+  // Shared across the whole batch this file was uploaded as part of.
+  const credits = parseCreditsJson(form.get("credits"));
 
   const photo = await prisma.photo.create({
     data: {
@@ -80,7 +72,14 @@ export async function POST(req: NextRequest) {
         create: credits.map((c, i) => ({
           cosplayerCn: c.cosplayerCn,
           characterName: c.characterName,
-          sortOrder: i
+          sortOrder: i,
+          socialLinks: {
+            create: c.socialLinks.map((s, j) => ({
+              platform: s.platform,
+              url: s.url,
+              sortOrder: j
+            }))
+          }
         }))
       }
     }

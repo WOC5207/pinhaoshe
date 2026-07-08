@@ -8,6 +8,8 @@ import SlotAdder from "@/components/admin/SlotAdder";
 import ConfirmSubmit from "@/components/admin/ConfirmSubmit";
 import CopyButton from "@/components/admin/CopyButton";
 import BookingStatusButton from "@/components/admin/BookingStatusButton";
+import LotteryEnabledToggle from "@/components/admin/LotteryEnabledToggle";
+import { Link } from "@/i18n/navigation";
 import {
   deleteBookingEvent,
   deleteSlot,
@@ -42,13 +44,28 @@ export default async function EditBookingEventPage({
     <div className="flex flex-col gap-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">{t("editEvent")}</h1>
-        <form action={deleteBookingEvent}>
-          <input type="hidden" name="id" value={event.id} />
-          <ConfirmSubmit
-            label={t("deleteEvent")}
-            confirmText={t("confirmDeleteEvent")}
+        <div className="flex items-center gap-3">
+          <LotteryEnabledToggle
+            bookingEventId={event.id}
+            defaultEnabled={event.lotteryEnabled}
+            label={t("lotteryEnabledLabel")}
           />
-        </form>
+          {event.lotteryEnabled && (
+            <Link
+              href={`/admin/bookings/${event.id}/lottery`}
+              className="rounded-md border border-border-strong px-3 py-1.5 text-sm text-fg-muted transition hover:border-fg-faint hover:text-fg"
+            >
+              {t("lotteryTool")}
+            </Link>
+          )}
+          <form action={deleteBookingEvent}>
+            <input type="hidden" name="id" value={event.id} />
+            <ConfirmSubmit
+              label={t("deleteEvent")}
+              confirmText={t("confirmDeleteEvent")}
+            />
+          </form>
+        </div>
       </div>
 
       <div className="rounded-xl border border-border bg-surface p-4">

@@ -23,6 +23,30 @@ function formatShutterSpeed(seconds: number): string {
   return `1/${Math.round(1 / seconds)}s`;
 }
 
+/** Same as formatShutterSpeed but without the trailing "s" — for
+ * pre-filling an editable text field with the stored value. */
+export function formatShutterSpeedInput(seconds: number | null): string {
+  if (!seconds) return "";
+  return seconds >= 1 ? `${seconds}` : `1/${Math.round(1 / seconds)}`;
+}
+
+/**
+ * Parses admin-entered shutter speed text into seconds. Accepts fraction
+ * notation ("1/125", the way photographers usually think of it) or a plain
+ * decimal number of seconds ("2", "0.5"). Returns null for anything else.
+ */
+export function parseShutterSpeed(raw: string): number | null {
+  const trimmed = raw.trim().replace(/s$/i, "");
+  if (!trimmed) return null;
+  const fraction = trimmed.match(/^(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)$/);
+  if (fraction) {
+    const den = Number(fraction[2]);
+    return den > 0 ? Number(fraction[1]) / den : null;
+  }
+  const n = Number(trimmed);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
 /** "Canon EOS R5 · RF50mm F1.2L", or just whichever of the two is known. */
 export function formatGear(
   cameraModel: string | null,

@@ -6,12 +6,28 @@ import {
   deletePhoto,
   movePhoto,
   setCoverPhoto,
-  updatePhotoCredits
+  updatePhotoCredits,
+  updatePhotoExif
 } from "@/app/[locale]/admin/(protected)/events/actions";
+import SocialLinksEditor, {
+  emptySocialLink,
+  type SocialLinkValue
+} from "./SocialLinksEditor";
 
 export interface AdminPhotoCredit {
   cosplayerCn: string;
   characterName: string;
+  socialLinks: { platform: string; url: string }[];
+}
+
+export interface AdminPhotoExif {
+  focalLengthMm: string;
+  aperture: string;
+  exposureTime: string;
+  iso: string;
+  takenAt: string;
+  cameraModel: string;
+  lensModel: string;
 }
 
 export interface AdminPhoto {
@@ -19,6 +35,7 @@ export interface AdminPhoto {
   thumbUrl: string;
   credits: AdminPhotoCredit[];
   isCover: boolean;
+  exif: AdminPhotoExif;
 }
 
 const btnCls =
@@ -27,48 +44,85 @@ const smallInputCls =
   "min-w-0 flex-1 rounded-md border border-border-strong bg-page px-2 py-1 text-xs text-fg outline-none focus:border-fg-subtle";
 
 let rowKeySeq = 0;
-function makeRow(initial?: AdminPhotoCredit) {
+interface CreditRow {
+  key: number;
+  cosplayerCn: string;
+  characterName: string;
+  socialLinks: SocialLinkValue[];
+}
+function makeRow(initial?: AdminPhotoCredit): CreditRow {
   return {
     key: rowKeySeq++,
     cosplayerCn: initial?.cosplayerCn ?? "",
-    characterName: initial?.characterName ?? ""
+    characterName: initial?.characterName ?? "",
+    socialLinks: (initial?.socialLinks ?? []).map((s) => emptySocialLink(s))
   };
 }
 
-function CreditRowsFields({ initial }: { initial: AdminPhotoCredit[] }) {
+function CreditsForm({
+  photoId,
+  initial
+}: {
+  photoId: string;
+  initial: AdminPhotoCredit[];
+}) {
   const t = useTranslations("adminEvents");
-  const [rows, setRows] = useState(() =>
+  const tc = useTranslations("common");
+  const [rows, setRows] = useState<CreditRow[]>(() =>
     initial.length > 0 ? initial.map((c) => makeRow(c)) : [makeRow()]
   );
 
+  function updateRow(key: number, patch: Partial<CreditRow>) {
+    setRows((rs) => rs.map((r) => (r.key === key ? { ...r, ...patch } : r)));
+  }
+
+  const creditsJson = JSON.stringify(
+    rows.map((r) => ({
+      cosplayerCn: r.cosplayerCn,
+      characterName: r.characterName,
+      socialLinks: r.socialLinks.map((s) => ({ platform: s.platform, url: s.url }))
+    }))
+  );
+
   return (
-    <div className="flex flex-col gap-2">
+    <form action={updatePhotoCredits} className="flex flex-col gap-2">
+      <input type="hidden" name="photoId" value={photoId} />
+      <input type="hidden" name="creditsJson" value={creditsJson} />
       {rows.map((row) => (
-        <div key={row.key} className="flex gap-1">
-          <input
-            name="cosplayerCn"
-            defaultValue={row.cosplayerCn}
-            placeholder={t("cosplayerCn")}
-            maxLength={200}
-            className={smallInputCls}
+        <div
+          key={row.key}
+          className="flex flex-col gap-1 rounded-md border border-border-strong/40 p-1.5"
+        >
+          <div className="flex gap-1">
+            <input
+              value={row.cosplayerCn}
+              onChange={(e) => updateRow(row.key, { cosplayerCn: e.target.value })}
+              placeholder={t("cosplayerCn")}
+              maxLength={200}
+              className={smallInputCls}
+            />
+            <input
+              value={row.characterName}
+              onChange={(e) => updateRow(row.key, { characterName: e.target.value })}
+              placeholder={t("characterName")}
+              maxLength={200}
+              className={smallInputCls}
+            />
+            {rows.length > 1 && (
+              <button
+                type="button"
+                aria-label={t("removeCosplayerAria")}
+                onClick={() => setRows((r) => r.filter((x) => x.key !== row.key))}
+                className={btnCls}
+              >
+                ×
+              </button>
+            )}
+          </div>
+          <SocialLinksEditor
+            links={row.socialLinks}
+            onChange={(links) => updateRow(row.key, { socialLinks: links })}
           />
-          <input
-            name="characterName"
-            defaultValue={row.characterName}
-            placeholder={t("characterName")}
-            maxLength={200}
-            className={smallInputCls}
-          />
-          {rows.length > 1 && (
-            <button
-              type="button"
-              aria-label={t("removeCosplayerAria")}
-              onClick={() => setRows((r) => r.filter((x) => x.key !== row.key))}
-              className={btnCls}
-            >
-              ×
-            </button>
-          )}
         </div>
       ))}
       <button
@@ -78,7 +132,116 @@ function CreditRowsFields({ initial }: { initial: AdminPhotoCredit[] }) {
       >
         + {t("addCosplayer")}
       </button>
-    </div>
+      <button type="submit" className={`${btnCls} self-start`}>
+        {tc("save")}
+      </button>
+    </form>
+  );
+}
+
+function ExifForm({
+  photoId,
+  initial
+}: {
+  photoId: string;
+  initial: AdminPhotoExif;
+}) {
+  const t = useTranslations("adminEvents");
+  const tc = useTranslations("common");
+  // Most photos already have EXIF read automatically; keep this tucked away
+  // so it doesn't clutter every card, and only default open when something
+  // is actually missing.
+  const [open, setOpen] = useState(
+    () =>
+      !initial.focalLengthMm &&
+      !initial.aperture &&
+      !initial.exposureTime &&
+      !initial.iso &&
+      !initial.cameraModel &&
+      !initial.lensModel
+  );
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className={`${btnCls} self-start`}
+      >
+        {t("editExif")}
+      </button>
+    );
+  }
+
+  return (
+    <form
+      action={updatePhotoExif}
+      className="flex flex-col gap-1 rounded-md border border-border-strong/40 p-1.5"
+    >
+      <input type="hidden" name="photoId" value={photoId} />
+      <div className="grid grid-cols-2 gap-1">
+        <input
+          name="exifCameraModel"
+          defaultValue={initial.cameraModel}
+          placeholder={t("exifCameraModel")}
+          maxLength={200}
+          className={smallInputCls}
+        />
+        <input
+          name="exifLensModel"
+          defaultValue={initial.lensModel}
+          placeholder={t("exifLensModel")}
+          maxLength={200}
+          className={smallInputCls}
+        />
+        <input
+          name="exifFocalLengthMm"
+          defaultValue={initial.focalLengthMm}
+          placeholder={t("exifFocalLength")}
+          inputMode="decimal"
+          className={smallInputCls}
+        />
+        <input
+          name="exifAperture"
+          defaultValue={initial.aperture}
+          placeholder={t("exifAperture")}
+          inputMode="decimal"
+          className={smallInputCls}
+        />
+        <input
+          name="exifExposureTime"
+          defaultValue={initial.exposureTime}
+          placeholder={t("exifExposureTime")}
+          className={smallInputCls}
+        />
+        <input
+          name="exifIso"
+          defaultValue={initial.iso}
+          placeholder={t("exifIso")}
+          inputMode="numeric"
+          className={smallInputCls}
+        />
+        <input
+          name="exifTakenAt"
+          type="date"
+          defaultValue={initial.takenAt}
+          aria-label={t("exifTakenAt")}
+          className={smallInputCls}
+        />
+      </div>
+      <div className="flex gap-2">
+        <button type="submit" className={`${btnCls} self-start`}>
+          {tc("save")}
+        </button>
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className={`${btnCls} self-start`}
+        >
+          {tc("cancel")}
+        </button>
+      </div>
+    </form>
   );
 }
 
@@ -112,13 +275,8 @@ export default function PhotoManager({ photos }: { photos: AdminPhoto[] }) {
             )}
           </div>
 
-          <form action={updatePhotoCredits} className="flex flex-col gap-2">
-            <input type="hidden" name="photoId" value={photo.id} />
-            <CreditRowsFields initial={photo.credits} />
-            <button type="submit" className={`${btnCls} self-start`}>
-              {tc("save")}
-            </button>
-          </form>
+          <CreditsForm photoId={photo.id} initial={photo.credits} />
+          <ExifForm photoId={photo.id} initial={photo.exif} />
 
           <div className="flex flex-wrap gap-2">
             <form action={movePhoto}>

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/db";
 import { photoUrls } from "@/lib/images";
+import { formatShutterSpeedInput } from "@/lib/exif";
 import { Link } from "@/i18n/navigation";
 import EventForm from "@/components/admin/EventForm";
 import PhotoUploader from "@/components/admin/PhotoUploader";
@@ -23,7 +24,12 @@ export default async function EditEventPage({
     include: {
       photos: {
         orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
-        include: { credits: { orderBy: { sortOrder: "asc" } } }
+        include: {
+          credits: {
+            orderBy: { sortOrder: "asc" },
+            include: { socialLinks: { orderBy: { sortOrder: "asc" } } }
+          }
+        }
       }
     }
   });
@@ -34,9 +40,19 @@ export default async function EditEventPage({
     thumbUrl: photoUrls(event.id, p.id).thumb,
     credits: p.credits.map((c) => ({
       cosplayerCn: c.cosplayerCn,
-      characterName: c.characterName
+      characterName: c.characterName,
+      socialLinks: c.socialLinks.map((s) => ({ platform: s.platform, url: s.url }))
     })),
-    isCover: event.coverPhotoId === p.id
+    isCover: event.coverPhotoId === p.id,
+    exif: {
+      focalLengthMm: p.exifFocalLengthMm?.toString() ?? "",
+      aperture: p.exifAperture?.toString() ?? "",
+      exposureTime: formatShutterSpeedInput(p.exifExposureTime),
+      iso: p.exifIso?.toString() ?? "",
+      takenAt: p.exifTakenAt ? p.exifTakenAt.toISOString().slice(0, 10) : "",
+      cameraModel: p.exifCameraModel ?? "",
+      lensModel: p.exifLensModel ?? ""
+    }
   }));
 
   return (

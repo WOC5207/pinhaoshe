@@ -11,6 +11,7 @@ export interface AlbumPhoto {
   med: string;
   full: string;
   caption: string;
+  socialLinks: { label: string; url: string }[];
   width: number;
   height: number;
   exif: PhotoExifDisplay;
@@ -211,16 +212,31 @@ function Lightbox({
         </button>
       </div>
 
-      {/* Information bar: credit line, then camera/lens, then shooting data. */}
-      {(photo.caption || gearLine || shootLine) && (
+      {/* Information bar: credit line, social buttons, camera/lens, shooting data. */}
+      {(photo.caption || gearLine || shootLine || photo.socialLinks.length > 0) && (
         <div
-          className="relative z-10 flex flex-col items-center gap-1 bg-black/30 px-4 pb-6 pt-3 backdrop-blur-sm"
+          className="relative z-10 flex flex-col items-center gap-2 bg-black/30 px-4 pb-6 pt-3 backdrop-blur-sm"
           onClick={(e) => e.stopPropagation()}
         >
           {photo.caption && (
             <p className="text-center text-sm font-medium text-neutral-100">
               {photo.caption}
             </p>
+          )}
+          {photo.socialLinks.length > 0 && (
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              {photo.socialLinks.map((link, i) => (
+                <a
+                  key={i}
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-full bg-white/10 px-3 py-1.5 text-xs text-white transition hover:bg-white/20"
+                >
+                  {link.label} ↗
+                </a>
+              ))}
+            </div>
           )}
           {gearLine && (
             <p className="text-center text-xs text-neutral-400">{gearLine}</p>

@@ -64,12 +64,26 @@ model Photo {
 // the zh and en sites (these are names, not translatable content). A photo
 // with multiple cosplayers gets one row per person.
 model PhotoCredit {
-  id            String   @id @default(cuid())
+  id            String       @id @default(cuid())
   photoId       String
-  photo         Photo    @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  photo         Photo        @relation(fields: [photoId], references: [id], onDelete: Cascade)
   cosplayerCn   String
-  characterName String   @default("")
-  sortOrder     Int      @default(0)
+  characterName String       @default("")
+  sortOrder     Int          @default(0)
+  socialLinks   SocialLink[]
+}
+
+// A cosplayer's social-media profile link, shown as a button on the enlarged
+// photo. A credit can link to several platforms.
+model SocialLink {
+  id        String      @id @default(cuid())
+  creditId  String
+  credit    PhotoCredit @relation(fields: [creditId], references: [id], onDelete: Cascade)
+  // One of the fixed values in src/lib/social.ts (e.g. "rednote", "tiktok",
+  // "instagram") — not admin-configurable, so no separate label fields.
+  platform  String
+  url       String
+  sortOrder Int         @default(0)
 }
 
 // A bookable photoshoot event with time slots (separate from gallery events)
@@ -84,7 +98,12 @@ model BookingEvent {
   location      String     @default("")
   date          DateTime
   open          Boolean    @default(true)
+  // Whether the prize-draw tool is enabled for this event at all. Off by
+  // default so existing/new events don't suddenly expose a "Prize draw"
+  // link and public entry page until the admin opts in.
+  lotteryEnabled Boolean   @default(false)
   slots         TimeSlot[]
+  lotteryDraw   LotteryDraw?
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 }
@@ -164,4 +183,73 @@ model Booking {
   // Private token for the visitor's self-cancel link
   cancelToken   String   @unique
   createdAt     DateTime @default(now())
+  lotteryEntry  LotteryEntry?
+}
+
+// A prize draw ("抽奖") tied to one booking event. Entrants either come from
+// the admin hand-picking confirmed bookings, or from visitors filling in the
+// shareable public entry link (token). Either way each becomes a
+// LotteryEntry with its own display token, so the wheel can show tokens
+// instead of names until a winner is revealed.
+model LotteryDraw {
+  id             String         @id @default(cuid())
+  bookingEventId String         @unique
+  bookingEvent   BookingEvent   @relation(fields: [bookingEventId], references: [id], onDelete: Cascade)
+  // Unguessable token used in the shareable public entry-link URL
+  token          String         @unique
+  // Whether the public entry link currently accepts new entries. Toggled off
+  // once the admin wants to lock the pool before spinning.
+  open           Boolean        @default(true)
+  // Whether visitors who already have an entry may spin the wheel themselves
+  // (self-serve draw) from the public link. Separate from `open` so the
+  // admin can close entries first, then flip this on to start the live
+  // draw. Defaults off so existing/new draws don't expose this unprompted.
+  spinEnabled    Boolean        @default(false)
+  entries        LotteryEntry[]
+  prizes         LotteryPrize[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+}
+
+// One entrant in a draw: either wrapping a confirmed booking the admin
+// selected, or a standalone self-entry a visitor submitted through the
+// public link (bookingId null). name/characterName/contactMethod/
+// contactValue are always populated on the entry itself (copied from the
+// booking at add-time, or typed in directly), so display never has to join
+// out to Booking. Once an entry wins a prize, wonPrizeId/wonAt are set and
+// it drops out of the pool for later spins.
+model LotteryEntry {
+  id            String        @id @default(cuid())
+  drawId        String
+  draw          LotteryDraw   @relation(fields: [drawId], references: [id], onDelete: Cascade)
+  bookingId     String?       @unique
+  booking       Booking?      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  name          String
+  characterName String        @default("")
+  contactMethod String        @default("")
+  contactValue  String        @default("")
+  token         String
+  wonPrizeId    String?
+  wonPrize      LotteryPrize? @relation(fields: [wonPrizeId], references: [id], onDelete: SetNull)
+  wonAt         DateTime?
+  createdAt     DateTime      @default(now())
+
+  @@unique([drawId, token])
+}
+
+// A prize option on the wheel. Remaining stock is derived as quantity minus
+// the number of entries linked via wonPrizeId. `weight` is this prize's
+// relative chance on the wheel compared to the other in-stock prizes (not a
+// percentage — e.g. weight 10 vs weight 1 means ~10x as likely), so slice
+// size and odds shrink automatically as prizes with higher weight run out.
+model LotteryPrize {
+  id        String         @id @default(cuid())
+  drawId    String
+  draw      LotteryDraw    @relation(fields: [drawId], references: [id], onDelete: Cascade)
+  name      String
+  quantity  Int            @default(1)
+  weight    Int            @default(1)
+  sortOrder Int            @default(0)
+  winners   LotteryEntry[]
+  createdAt DateTime       @default(now())
 }

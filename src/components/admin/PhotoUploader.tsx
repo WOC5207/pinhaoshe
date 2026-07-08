@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import SocialLinksEditor, { type SocialLinkValue } from "./SocialLinksEditor";
 
 type UploadStatus = { total: number; done: number; failed: string[] };
 type Mode = "single" | "multiple";
@@ -10,11 +11,12 @@ interface Row {
   key: number;
   cosplayerCn: string;
   characterName: string;
+  socialLinks: SocialLinkValue[];
 }
 
 let rowKeySeq = 0;
 function emptyRow(): Row {
-  return { key: rowKeySeq++, cosplayerCn: "", characterName: "" };
+  return { key: rowKeySeq++, cosplayerCn: "", characterName: "", socialLinks: [] };
 }
 
 const inputCls =
@@ -36,31 +38,33 @@ export default function PhotoUploader({ eventId }: { eventId: string }) {
 
   const [files, setFiles] = useState<File[]>([]);
   const [mode, setMode] = useState<Mode>("single");
-  const [singleCn, setSingleCn] = useState("");
-  const [singleCharacter, setSingleCharacter] = useState("");
-  const [rows, setRows] = useState<Row[]>(() => [emptyRow(), emptyRow()]);
+  const [rows, setRows] = useState<Row[]>(() => [emptyRow()]);
   const [status, setStatus] = useState<UploadStatus | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const credits =
-    mode === "single"
-      ? singleCn.trim()
-        ? [{ cosplayerCn: singleCn.trim(), characterName: singleCharacter.trim() }]
-        : []
-      : rows
-          .map((r) => ({
-            cosplayerCn: r.cosplayerCn.trim(),
-            characterName: r.characterName.trim()
-          }))
-          .filter((r) => r.cosplayerCn.length > 0);
+  const credits = rows
+    .map((r) => ({
+      cosplayerCn: r.cosplayerCn.trim(),
+      characterName: r.characterName.trim(),
+      socialLinks: r.socialLinks
+        .map((s) => ({ platform: s.platform, url: s.url.trim() }))
+        .filter((s) => s.url.length > 0)
+    }))
+    .filter((r) => r.cosplayerCn.length > 0);
 
   const canCreate = !busy && files.length > 0 && credits.length > 0;
 
   function switchMode(next: Mode) {
     setMode(next);
-    if (next === "multiple" && rows.length === 0) {
-      setRows([emptyRow(), emptyRow()]);
-    }
+    setRows((rs) => {
+      if (next === "single") return rs.length > 0 ? [rs[0]] : [emptyRow()];
+      if (rs.length < 2) return [...rs, ...Array.from({ length: 2 - rs.length }, emptyRow)];
+      return rs;
+    });
+  }
+
+  function updateRow(key: number, patch: Partial<Row>) {
+    setRows((rs) => rs.map((r) => (r.key === key ? { ...r, ...patch } : r)));
   }
 
   async function handleCreate() {
@@ -77,10 +81,7 @@ export default function PhotoUploader({ eventId }: { eventId: string }) {
         const body = new FormData();
         body.append("eventId", eventId);
         body.append("file", file);
-        for (const c of credits) {
-          body.append("cosplayerCn", c.cosplayerCn);
-          body.append("characterName", c.characterName);
-        }
+        body.append("credits", JSON.stringify(credits));
         const res = await fetch("/api/admin/photos", { method: "POST", body });
         if (!res.ok) failed.push(file.name);
       } catch {
@@ -92,9 +93,7 @@ export default function PhotoUploader({ eventId }: { eventId: string }) {
     setBusy(false);
     setFiles([]);
     if (inputRef.current) inputRef.current.value = "";
-    setSingleCn("");
-    setSingleCharacter("");
-    setRows([emptyRow(), emptyRow()]);
+    setRows(mode === "single" ? [emptyRow()] : [emptyRow(), emptyRow()]);
     router.refresh();
   }
 
@@ -138,75 +137,45 @@ export default function PhotoUploader({ eventId }: { eventId: string }) {
         </button>
       </div>
 
-      {mode === "single" ? (
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="text-fg-muted">
-              {t("cosplayerCn")} <span className="text-red-400">*</span>
-            </span>
-            <input
-              value={singleCn}
-              onChange={(e) => setSingleCn(e.target.value)}
-              maxLength={200}
-              className={inputCls}
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="text-fg-muted">{t("characterName")}</span>
-            <input
-              value={singleCharacter}
-              onChange={(e) => setSingleCharacter(e.target.value)}
-              maxLength={200}
-              className={inputCls}
-            />
-          </label>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-2">
-          {rows.map((row) => (
-            <div key={row.key} className="flex gap-2">
+      <div className="flex flex-col gap-2">
+        {rows.map((row) => (
+          <div
+            key={row.key}
+            className="flex flex-col gap-2 rounded-lg border border-border-strong/50 p-2"
+          >
+            <div className="flex gap-2">
               <input
                 value={row.cosplayerCn}
-                onChange={(e) =>
-                  setRows((rs) =>
-                    rs.map((r) =>
-                      r.key === row.key ? { ...r, cosplayerCn: e.target.value } : r
-                    )
-                  )
-                }
+                onChange={(e) => updateRow(row.key, { cosplayerCn: e.target.value })}
                 placeholder={t("cosplayerCn")}
                 maxLength={200}
                 className={inputCls}
               />
               <input
                 value={row.characterName}
-                onChange={(e) =>
-                  setRows((rs) =>
-                    rs.map((r) =>
-                      r.key === row.key
-                        ? { ...r, characterName: e.target.value }
-                        : r
-                    )
-                  )
-                }
+                onChange={(e) => updateRow(row.key, { characterName: e.target.value })}
                 placeholder={t("characterName")}
                 maxLength={200}
                 className={inputCls}
               />
-              {rows.length > 1 && (
+              {mode === "multiple" && rows.length > 1 && (
                 <button
                   type="button"
                   aria-label={t("removeCosplayerAria")}
-                  onClick={() =>
-                    setRows((rs) => rs.filter((r) => r.key !== row.key))
-                  }
+                  onClick={() => setRows((rs) => rs.filter((r) => r.key !== row.key))}
                   className={btnCls}
                 >
                   ×
                 </button>
               )}
             </div>
-          ))}
+            <SocialLinksEditor
+              links={row.socialLinks}
+              onChange={(links) => updateRow(row.key, { socialLinks: links })}
+            />
+          </div>
+        ))}
+        {mode === "multiple" && (
           <button
             type="button"
             onClick={() => setRows((rs) => [...rs, emptyRow()])}
@@ -214,8 +183,8 @@ export default function PhotoUploader({ eventId }: { eventId: string }) {
           >
             + {t("addCosplayer")}
           </button>
-        </div>
-      )}
+        )}
+      </div>
       <p className="-mt-1 text-xs text-fg-subtle">{t("batchCreditHint")}</p>
 
       <button
