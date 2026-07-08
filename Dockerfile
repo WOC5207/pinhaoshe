@@ -1,6 +1,12 @@
 # ---- Stage 1: install dependencies -----------------------------------
 FROM node:22-alpine AS deps
 WORKDIR /app
+# node:22-alpine ships an npm whose `ci` is overly strict about unsatisfied
+# *optional* peer dependencies (e.g. @swc/core's optional peer on
+# @swc/helpers, which next-intl pulls in but next itself pins to a version
+# that doesn't satisfy it) and fails the install over something npm's own
+# resolver considers fine. Newer npm handles this correctly.
+RUN npm install -g npm@11
 COPY package.json package-lock.json ./
 COPY prisma ./prisma
 RUN npm ci
