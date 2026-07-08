@@ -1,4 +1,4 @@
-# Pinhaoshe — Cosplay Photography Site
+# Pinhaoshe
 
 A self-hosted, bilingual (简体中文 / English) photography portfolio and photoshoot
 booking site, designed to run on a Synology NAS via Container Manager.
