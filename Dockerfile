@@ -50,7 +50,10 @@ COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
 COPY docker-entrypoint.sh ./docker-entrypoint.sh
-RUN chmod +x ./docker-entrypoint.sh
+# Strip any stray \r (e.g. from a Windows-side edit) so the shebang always
+# resolves to /bin/sh — a CRLF-corrupted shebang fails at exec time with a
+# confusing "no such file or directory" instead of a syntax error.
+RUN sed -i 's/\r$//' ./docker-entrypoint.sh && chmod +x ./docker-entrypoint.sh
 
 EXPOSE 3000
 ENTRYPOINT ["./docker-entrypoint.sh"]
