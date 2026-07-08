@@ -63,3 +63,23 @@
 body {
   font-family: var(--font-sans);
 }
+
+/* Native <input type="date"> controls (calendar picker icon, etc.) render
+   dark by default, which reads as near-invisible against our dark theme's
+   dark input backgrounds. color-scheme hints the browser to use its dark
+   native-control palette instead; the explicit filter is a belt-and-braces
+   fix for Chromium's calendar icon specifically. */
+.dark input {
+  color-scheme: dark;
+}
+.dark input::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) input {
+    color-scheme: dark;
+  }
+  :root:not(.light) input::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+  }
+}
