@@ -43,11 +43,16 @@ ENV NODE_ENV=production \
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
-# Prisma schema/migrations + CLI (for `migrate deploy` on startup)
+# Prisma schema/migrations + CLI (for `migrate deploy` on startup). The full
+# node_modules (not just prisma/@prisma/.prisma) is needed because the
+# Prisma CLI's own transitive dependencies shift between versions (e.g.
+# 6.16+ added @prisma/config, which pulls in "effect") — hand-picking
+# folders here breaks again every time Prisma adds one. The Next.js server
+# itself doesn't need this (its trimmed deps already came in via
+# .next/standalone above); this only exists for the CLI the entrypoint
+# script runs at container start.
 COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=deps /app/node_modules ./node_modules
 
 COPY docker-entrypoint.sh ./docker-entrypoint.sh
 # Strip any stray \r (e.g. from a Windows-side edit) so the shebang always
