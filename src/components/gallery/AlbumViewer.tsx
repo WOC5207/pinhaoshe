@@ -33,30 +33,41 @@ export default function AlbumViewer({
 
   return (
     <>
-      {/* Masonry-style responsive grid, lazy-loaded thumbnails */}
-      <ul className="columns-2 gap-3 sm:columns-3 lg:columns-4 [&>li]:mb-3">
-        {photos.map((photo, i) => (
-          <li key={photo.id} className="break-inside-avoid">
-            <button
-              type="button"
-              onClick={() => setOpenIndex(i)}
-              className="group relative block w-full overflow-hidden rounded-lg cursor-zoom-in"
+      {/*
+        Justified "poster" mosaic: each item's flex-basis and flex-grow are
+        proportional to the photo's aspect ratio, so rows fill the full width
+        edge-to-edge and all photos in a row share one height (varying row to
+        row → varied, packed sizes). The item box ends up at the photo's own
+        aspect ratio, so object-cover has essentially nothing to crop.
+      */}
+      <ul className="flex flex-wrap gap-1 [--row-h:150px] sm:[--row-h:210px] lg:[--row-h:250px]">
+        {photos.map((photo, i) => {
+          const ar = photo.height ? photo.width / photo.height : 1;
+          return (
+            <li
+              key={photo.id}
+              className="overflow-hidden rounded-md"
+              style={{ flexGrow: ar, flexBasis: `calc(${ar} * var(--row-h))` }}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={photo.thumb}
-                srcSet={`${photo.thumb} 480w, ${photo.med} 1280w`}
-                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                alt={photo.caption}
-                loading="lazy"
-                width={photo.width}
-                height={photo.height}
-                className="w-full transition group-hover:opacity-90"
-              />
-              <PhotoCreditOverlay credit={photo.caption} />
-            </button>
-          </li>
-        ))}
+              <button
+                type="button"
+                onClick={() => setOpenIndex(i)}
+                className="group relative block h-full w-full cursor-zoom-in"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={photo.thumb}
+                  srcSet={`${photo.thumb} 480w, ${photo.med} 1280w`}
+                  sizes="(max-width: 640px) 50vw, 33vw"
+                  alt={photo.caption}
+                  loading="lazy"
+                  className="block h-full w-full object-cover transition group-hover:opacity-90"
+                />
+                <PhotoCreditOverlay credit={photo.caption} />
+              </button>
+            </li>
+          );
+        })}
       </ul>
 
       {openIndex !== null && (

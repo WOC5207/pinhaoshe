@@ -20,10 +20,9 @@ export interface StreamEvent {
 /**
  * The homepage's scroll-down photo stream: every published album with
  * photos, each as its own labeled section (title/date/location) followed by
- * a masonry of that album's photos — the same photos you'd see on the album
- * page, just all inline so visitors can browse without clicking in. Uses a
- * CSS-columns masonry (like AlbumViewer's grid) so photos keep their natural
- * aspect ratio instead of being cropped into uniform tiles.
+ * a justified "poster" mosaic of that album's photos — the same photos you'd
+ * see on the album page, just all inline so visitors can browse without
+ * clicking in. See the layout note on the <ul> below for how the mosaic works.
  */
 export default function EventPhotoStream({
   events
@@ -47,25 +46,30 @@ export default function EventPhotoStream({
               {[event.date, event.location || null].filter(Boolean).join(" · ")}
             </span>
           </Link>
-          <ul className="columns-2 gap-3 sm:columns-3 lg:columns-4 [&>li]:mb-3">
+          {/*
+            Justified "poster" mosaic. Each item's flex-basis and flex-grow are
+            proportional to the photo's aspect ratio, so every row grows to fill
+            the full width edge-to-edge and all photos in a row share one height
+            — a height that varies from row to row, giving the varied, packed
+            poster look. The item box ends up at the photo's own aspect ratio,
+            so object-cover has (essentially) nothing to crop. --row-h sets the
+            rough per-row height (responsive).
+          */}
+          <ul className="flex flex-wrap gap-1 [--row-h:140px] sm:[--row-h:190px] lg:[--row-h:230px]">
             {event.photos.map((photo) => {
-              // On mobile, a photo squeezed into one of two columns can get
-              // too small to read. Landscape photos span the full stream
-              // width there instead of sitting in a column; tablet/desktop
-              // are unaffected.
-              const isLandscape = photo.width > photo.height;
+              const ar = photo.height ? photo.width / photo.height : 1;
               return (
                 <li
                   key={photo.id}
-                  className={
-                    isLandscape
-                      ? "break-inside-avoid [column-span:all] sm:[column-span:none]"
-                      : "break-inside-avoid"
-                  }
+                  className="overflow-hidden rounded-md"
+                  style={{
+                    flexGrow: ar,
+                    flexBasis: `calc(${ar} * var(--row-h))`
+                  }}
                 >
                   <Link
                     href={`/gallery/${event.slug}`}
-                    className="group relative block overflow-hidden rounded-lg"
+                    className="group relative block h-full"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
@@ -74,7 +78,7 @@ export default function EventPhotoStream({
                       loading="lazy"
                       width={photo.width}
                       height={photo.height}
-                      className="w-full transition group-hover:opacity-90"
+                      className="block h-full w-full object-cover transition group-hover:opacity-90"
                     />
                     <PhotoCreditOverlay credit={photo.alt} />
                   </Link>
