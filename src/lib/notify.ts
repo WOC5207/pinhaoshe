@@ -9,8 +9,9 @@ import "server-only";
 export interface BookingNotification {
   bookingId: string;
   name: string;
-  email: string;
-  phone: string;
+  characterName: string;
+  contactMethod: string;
+  contactValue: string;
   eventTitle: string;
   slotStart: Date;
   slotEnd: Date;

@@ -2,6 +2,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/db";
 import { pickText } from "@/lib/content";
 import { photoUrls } from "@/lib/images";
+import { formatDateRange } from "@/lib/datetime";
 import { Link } from "@/i18n/navigation";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +13,7 @@ export default async function GalleryPage() {
 
   const events = await prisma.event.findMany({
     where: { published: true },
-    orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+    orderBy: [{ dateStart: "desc" }, { createdAt: "desc" }],
     include: {
       coverPhoto: true,
       photos: { orderBy: { sortOrder: "asc" }, take: 1 },
@@ -54,9 +55,13 @@ export default async function GalleryPage() {
                       {pickText(locale, event.titleEn, event.titleZh)}
                     </h2>
                     <p className="text-sm text-fg-subtle">
-                      {event.date
-                        ? event.date.toISOString().slice(0, 10) + " · "
-                        : ""}
+                      {(() => {
+                        const range = formatDateRange(
+                          event.dateStart,
+                          event.dateEnd
+                        );
+                        return range ? `${range} · ` : "";
+                      })()}
                       {t("photosCount", { count: event._count.photos })}
                     </p>
                   </div>

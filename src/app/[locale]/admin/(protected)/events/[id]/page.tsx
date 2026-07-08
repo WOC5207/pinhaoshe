@@ -20,15 +20,22 @@ export default async function EditEventPage({
 
   const event = await prisma.event.findUnique({
     where: { id },
-    include: { photos: { orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] } }
+    include: {
+      photos: {
+        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+        include: { credits: { orderBy: { sortOrder: "asc" } } }
+      }
+    }
   });
   if (!event) notFound();
 
   const photos: AdminPhoto[] = event.photos.map((p) => ({
     id: p.id,
     thumbUrl: photoUrls(event.id, p.id).thumb,
-    cosplayerCn: p.cosplayerCn,
-    characterName: p.characterName,
+    credits: p.credits.map((c) => ({
+      cosplayerCn: c.cosplayerCn,
+      characterName: c.characterName
+    })),
     isCover: event.coverPhotoId === p.id
   }));
 
@@ -61,7 +68,8 @@ export default async function EditEventPage({
           titleEn: event.titleEn,
           titleZh: event.titleZh,
           slug: event.slug,
-          date: event.date ? event.date.toISOString().slice(0, 10) : "",
+          dateStart: event.dateStart ? event.dateStart.toISOString().slice(0, 10) : "",
+          dateEnd: event.dateEnd ? event.dateEnd.toISOString().slice(0, 10) : "",
           location: event.location,
           descriptionEn: event.descriptionEn,
           descriptionZh: event.descriptionZh,

@@ -3,6 +3,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/db";
 import { pickText } from "@/lib/content";
 import { formatDate } from "@/lib/datetime";
+import { getContactMethods } from "@/lib/settings";
 import BookingForm, { type PublicSlot } from "@/components/booking/BookingForm";
 
 export const dynamic = "force-dynamic";
@@ -41,6 +42,10 @@ export default async function BookPage({
   }));
 
   const description = pickText(locale, event.descriptionEn, event.descriptionZh);
+  const contactMethods = (await getContactMethods()).map((m) => ({
+    id: m.id,
+    label: pickText(locale, m.labelEn, m.labelZh)
+  }));
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 rounded-2xl border border-fg/10 bg-page/85 p-6 sm:p-8">
@@ -69,7 +74,7 @@ export default async function BookPage({
           {t("noSlotsNotice")}
         </p>
       ) : (
-        <BookingForm slots={slots} />
+        <BookingForm slots={slots} contactMethods={contactMethods} />
       )}
     </div>
   );

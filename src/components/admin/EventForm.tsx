@@ -9,7 +9,8 @@ export interface EventFormValues {
   titleEn: string;
   titleZh: string;
   slug: string;
-  date: string; // yyyy-mm-dd or ""
+  dateStart: string; // yyyy-mm-dd or ""
+  dateEnd: string; // yyyy-mm-dd or ""
   location: string;
   descriptionEn: string;
   descriptionZh: string;
@@ -63,15 +64,24 @@ export default function EventForm({
 
       <div className="grid gap-4 sm:grid-cols-3">
         <label className="flex flex-col gap-1 text-sm">
-          <span className="text-fg-muted">{t("date")}</span>
+          <span className="text-fg-muted">{t("dateStart")}</span>
           <input
-            name="date"
+            name="dateStart"
             type="date"
-            defaultValue={initial.date}
+            defaultValue={initial.dateStart}
             className={inputCls}
           />
         </label>
-        <label className="flex flex-col gap-1 text-sm sm:col-span-2">
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="text-fg-muted">{t("dateEnd")}</span>
+          <input
+            name="dateEnd"
+            type="date"
+            defaultValue={initial.dateEnd}
+            className={inputCls}
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-sm">
           <span className="text-fg-muted">{t("location")}</span>
           <input
             name="location"
@@ -81,6 +91,7 @@ export default function EventForm({
           />
         </label>
       </div>
+      <p className="-mt-2 text-xs text-fg-subtle">{t("dateRangeHint")}</p>
 
       <label className="flex flex-col gap-1 text-sm">
         <span className="text-fg-muted">{t("slug")}</span>

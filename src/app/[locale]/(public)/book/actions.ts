@@ -21,19 +21,14 @@ export type BookingFormState = {
     | "closed";
 };
 
-const bookingSchema = z
-  .object({
-    slotId: z.string().min(1).max(100),
-    name: z.string().trim().min(1).max(200),
-    email: z
-      .string()
-      .trim()
-      .max(320)
-      .refine((v) => v === "" || z.string().email().safeParse(v).success),
-    phone: z.string().trim().max(50),
-    notes: z.string().trim().max(2000)
-  })
-  .refine((d) => d.email !== "" || d.phone !== "");
+const bookingSchema = z.object({
+  slotId: z.string().min(1).max(100),
+  name: z.string().trim().min(1).max(200),
+  characterName: z.string().trim().max(200),
+  contactMethod: z.string().trim().min(1).max(60),
+  contactValue: z.string().trim().min(1).max(200),
+  notes: z.string().trim().max(2000)
+});
 
 export async function createBooking(
   _prev: BookingFormState,
@@ -48,8 +43,9 @@ export async function createBooking(
   const parsed = bookingSchema.safeParse({
     slotId: formData.get("slotId") ?? "",
     name: formData.get("name") ?? "",
-    email: formData.get("email") ?? "",
-    phone: formData.get("phone") ?? "",
+    characterName: formData.get("characterName") ?? "",
+    contactMethod: formData.get("contactMethod") ?? "",
+    contactValue: formData.get("contactValue") ?? "",
     notes: formData.get("notes") ?? ""
   });
   if (!parsed.success) return { error: "validation" };
@@ -77,8 +73,9 @@ export async function createBooking(
       data: {
         timeSlotId: slot.id,
         name: d.name,
-        email: d.email,
-        phone: d.phone,
+        characterName: d.characterName,
+        contactMethod: d.contactMethod,
+        contactValue: d.contactValue,
         notes: d.notes,
         cancelToken
       }
@@ -94,8 +91,9 @@ export async function createBooking(
   notifyBookingCreated({
     bookingId: cancelToken,
     name: d.name,
-    email: d.email,
-    phone: d.phone,
+    characterName: d.characterName,
+    contactMethod: d.contactMethod,
+    contactValue: d.contactValue,
     eventTitle: pickText(
       locale,
       result.slot.bookingEvent.titleEn,

@@ -19,3 +19,16 @@ export function formatPhotoCredit(
   if (!cosplayerCn) return characterName;
   return characterName ? `${cosplayerCn} · ${characterName}` : cosplayerCn;
 }
+
+/**
+ * Format a photo's full credit line from one or more (cosplayer, character)
+ * pairs — most photos have one, group shots have several.
+ */
+export function formatCredits(
+  credits: { cosplayerCn: string; characterName: string }[]
+): string {
+  return credits
+    .map((c) => formatPhotoCredit(c.cosplayerCn, c.characterName))
+    .filter(Boolean)
+    .join(", ");
+}

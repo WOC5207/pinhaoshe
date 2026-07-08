@@ -23,7 +23,8 @@ model Event {
   descriptionEn String    @default("")
   descriptionZh String    @default("")
   location      String    @default("")
-  date          DateTime?
+  dateStart     DateTime?
+  dateEnd       DateTime?
   published     Boolean   @default(false)
   coverPhotoId  String?   @unique
   coverPhoto    Photo?    @relation("EventCover", fields: [coverPhotoId], references: [id], onDelete: SetNull)
@@ -42,10 +43,9 @@ model Photo {
   originalName String
   width        Int
   height       Int
-  // Photo credit, shown identically on both the zh and en sites (these are
-  // names, not translatable content).
-  cosplayerCn   String  @default("")
-  characterName String  @default("")
+  // One or more (cosplayer, character) credits — most photos have one, group
+  // shots have several.
+  credits      PhotoCredit[]
   // EXIF read from the uploaded original at upload time (before it's
   // stripped for the displayed renditions). Null when the file had none.
   exifFocalLengthMm Float?
@@ -58,6 +58,18 @@ model Photo {
   sortOrder    Int      @default(0)
   createdAt    DateTime @default(now())
   coverOf      Event?   @relation("EventCover")
+}
+
+// A single cosplayer+character credit on a photo. Shown identically on both
+// the zh and en sites (these are names, not translatable content). A photo
+// with multiple cosplayers gets one row per person.
+model PhotoCredit {
+  id            String   @id @default(cuid())
+  photoId       String
+  photo         Photo    @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  cosplayerCn   String
+  characterName String   @default("")
+  sortOrder     Int      @default(0)
 }
 
 // A bookable photoshoot event with time slots (separate from gallery events)
@@ -120,17 +132,36 @@ model QuickLink {
   createdAt DateTime  @default(now())
 }
 
+// Admin-configured options for the booking form's contact-method dropdown
+// (e.g. WeChat, QQ, Email, Instagram...). Bookings store the chosen label as
+// plain text (see Booking.contactMethod), so editing/deleting an option here
+// never changes past bookings.
+model ContactMethod {
+  id        String   @id @default(cuid())
+  labelEn   String
+  labelZh   String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
 model Booking {
-  id          String   @id @default(cuid())
-  timeSlotId  String
-  timeSlot    TimeSlot @relation(fields: [timeSlotId], references: [id], onDelete: Cascade)
-  name        String
-  email       String   @default("")
-  phone       String   @default("")
-  notes       String   @default("")
+  id            String   @id @default(cuid())
+  timeSlotId    String
+  timeSlot      TimeSlot @relation(fields: [timeSlotId], references: [id], onDelete: Cascade)
+  // Cosplayer's CN (handle shown to the photographer)
+  name          String
+  // Character being cosplayed, optional.
+  characterName String   @default("")
+  // Chosen contact-method label (e.g. "WeChat") and the value for it (e.g.
+  // the visitor's WeChat ID). Both stored as plain text, not a foreign key,
+  // so the booking stays intact even if the admin later edits or removes
+  // that ContactMethod option.
+  contactMethod String   @default("")
+  contactValue  String   @default("")
+  notes         String   @default("")
   // "confirmed" | "cancelled" (SQLite has no enums)
-  status      String   @default("confirmed")
+  status        String   @default("confirmed")
   // Private token for the visitor's self-cancel link
-  cancelToken String   @unique
-  createdAt   DateTime @default(now())
+  cancelToken   String   @unique
+  createdAt     DateTime @default(now())
 }

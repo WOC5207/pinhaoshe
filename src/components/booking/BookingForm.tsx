@@ -14,6 +14,11 @@ export interface PublicSlot {
   remaining: number;
 }
 
+export interface PublicContactMethod {
+  id: string;
+  label: string; // already resolved to the current locale
+}
+
 const inputCls =
   "rounded-lg border border-border-strong bg-surface px-3 py-2 text-fg outline-none focus:border-fg-subtle";
 
@@ -21,7 +26,13 @@ function fmt(iso: string): string {
   return `${iso.slice(0, 10)} ${iso.slice(11, 16)}`;
 }
 
-export default function BookingForm({ slots }: { slots: PublicSlot[] }) {
+export default function BookingForm({
+  slots,
+  contactMethods
+}: {
+  slots: PublicSlot[];
+  contactMethods: PublicContactMethod[];
+}) {
   const t = useTranslations("booking");
   const [state, formAction, pending] = useActionState<
     BookingFormState,
@@ -86,22 +97,35 @@ export default function BookingForm({ slots }: { slots: PublicSlot[] }) {
           <span className="text-fg-muted">{t("name")} *</span>
           <input name="name" required maxLength={200} className={inputCls} />
         </label>
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="text-fg-muted">{t("characterName")}</span>
+          <input name="characterName" maxLength={200} className={inputCls} />
+        </label>
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="flex flex-col gap-1 text-sm">
-            <span className="text-fg-muted">{t("email")}</span>
-            <input
-              name="email"
-              type="email"
-              maxLength={320}
+            <span className="text-fg-muted">{t("contactMethod")} *</span>
+            <select
+              name="contactMethod"
+              required
+              defaultValue=""
               className={inputCls}
-            />
+            >
+              <option value="" disabled>
+                {t("contactMethodPlaceholder")}
+              </option>
+              {contactMethods.map((m) => (
+                <option key={m.id} value={m.label}>
+                  {m.label}
+                </option>
+              ))}
+            </select>
           </label>
           <label className="flex flex-col gap-1 text-sm">
-            <span className="text-fg-muted">{t("phone")}</span>
+            <span className="text-fg-muted">{t("contactValue")} *</span>
             <input
-              name="phone"
-              type="tel"
-              maxLength={50}
+              name="contactValue"
+              required
+              maxLength={200}
               className={inputCls}
             />
           </label>

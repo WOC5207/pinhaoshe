@@ -57,6 +57,9 @@ export default async function MyBookingPage({
           </span>
         </Row>
         <Row label={t("nameLabel")}>{booking.name}</Row>
+        {booking.characterName && (
+          <Row label={t("characterNameLabel")}>{booking.characterName}</Row>
+        )}
         <Row label={t("statusLabel")}>
           <span className={cancelled ? "text-red-400" : "text-emerald-300"}>
             {cancelled ? t("statusCancelled") : t("statusConfirmed")}

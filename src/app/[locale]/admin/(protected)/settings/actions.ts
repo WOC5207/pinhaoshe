@@ -185,6 +185,99 @@ export async function moveQuickLink(formData: FormData): Promise<void> {
   revalidatePath("/", "layout");
 }
 
+export type ContactMethodState = { error?: "validation"; ok?: boolean };
+
+const contactMethodSchema = z
+  .object({
+    labelEn: z.string().trim().max(60),
+    labelZh: z.string().trim().max(60)
+  })
+  .refine((d) => d.labelEn.length > 0 || d.labelZh.length > 0);
+
+function parseContactMethodForm(formData: FormData) {
+  return contactMethodSchema.safeParse({
+    labelEn: formData.get("labelEn") ?? "",
+    labelZh: formData.get("labelZh") ?? ""
+  });
+}
+
+export async function addContactMethod(
+  _prev: ContactMethodState,
+  formData: FormData
+): Promise<ContactMethodState> {
+  await guard();
+  const parsed = parseContactMethodForm(formData);
+  if (!parsed.success) return { error: "validation" };
+  const d = parsed.data;
+
+  const maxOrder = await prisma.contactMethod.aggregate({
+    _max: { sortOrder: true }
+  });
+  await prisma.contactMethod.create({
+    data: {
+      labelEn: d.labelEn,
+      labelZh: d.labelZh,
+      sortOrder: (maxOrder._max.sortOrder ?? 0) + 1
+    }
+  });
+
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+export async function updateContactMethod(formData: FormData): Promise<void> {
+  await guard();
+  const id = formData.get("id");
+  if (typeof id !== "string") return;
+  const parsed = parseContactMethodForm(formData);
+  if (!parsed.success) return;
+  const d = parsed.data;
+
+  await prisma.contactMethod
+    .update({
+      where: { id },
+      data: { labelEn: d.labelEn, labelZh: d.labelZh }
+    })
+    .catch(() => {});
+  revalidatePath("/", "layout");
+}
+
+export async function deleteContactMethod(formData: FormData): Promise<void> {
+  await guard();
+  const id = formData.get("id");
+  if (typeof id !== "string") return;
+  await prisma.contactMethod.delete({ where: { id } }).catch(() => {});
+  revalidatePath("/", "layout");
+}
+
+export async function moveContactMethod(formData: FormData): Promise<void> {
+  await guard();
+  const id = formData.get("id");
+  const direction = formData.get("direction");
+  if (typeof id !== "string" || (direction !== "up" && direction !== "down"))
+    return;
+
+  await prisma.$transaction(async (tx) => {
+    const methods = await tx.contactMethod.findMany({
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+      select: { id: true }
+    });
+    const index = methods.findIndex((m) => m.id === id);
+    const swapWith = direction === "up" ? index - 1 : index + 1;
+    if (index < 0 || swapWith < 0 || swapWith >= methods.length) return;
+
+    const order = methods.map((m) => m.id);
+    [order[index], order[swapWith]] = [order[swapWith], order[index]];
+    for (let i = 0; i < order.length; i++) {
+      await tx.contactMethod.update({
+        where: { id: order[i] },
+        data: { sortOrder: i + 1 }
+      });
+    }
+  });
+  revalidatePath("/", "layout");
+}
+
 export async function removeSiteImage(
   kind: "background" | "logo"
 ): Promise<void> {

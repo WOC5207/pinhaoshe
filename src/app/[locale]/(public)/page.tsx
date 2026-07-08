@@ -1,9 +1,9 @@
 import { getTranslations, getLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { prisma } from "@/lib/db";
-import { pickText, formatPhotoCredit } from "@/lib/content";
+import { pickText, formatCredits } from "@/lib/content";
 import { photoUrls } from "@/lib/images";
-import { formatDate } from "@/lib/datetime";
+import { formatDate, formatDateRange } from "@/lib/datetime";
 import {
   getSiteSettings,
   resolveHomeTitle,
@@ -35,9 +35,12 @@ export default async function HomePage() {
   const [events, bookingEvents, quickLinks] = await Promise.all([
     prisma.event.findMany({
       where: { published: true },
-      orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+      orderBy: [{ dateStart: "desc" }, { createdAt: "desc" }],
       include: {
-        photos: { orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] }
+        photos: {
+          orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+          include: { credits: { orderBy: { sortOrder: "asc" } } }
+        }
       }
     }),
     prisma.bookingEvent.findMany({
@@ -79,12 +82,12 @@ export default async function HomePage() {
     .map((e) => ({
       slug: e.slug,
       title: pickText(locale, e.titleEn, e.titleZh),
-      date: e.date ? formatDate(e.date) : null,
+      date: formatDateRange(e.dateStart, e.dateEnd) || null,
       location: e.location,
       photos: e.photos.map((p) => ({
         id: p.id,
         url: photoUrls(e.id, p.id).thumb,
-        alt: formatPhotoCredit(p.cosplayerCn, p.characterName),
+        alt: formatCredits(p.credits),
         width: p.width,
         height: p.height
       }))

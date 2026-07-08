@@ -1,23 +1,86 @@
 "use client";
 
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import {
   deletePhoto,
   movePhoto,
   setCoverPhoto,
-  updatePhotoCredit
+  updatePhotoCredits
 } from "@/app/[locale]/admin/(protected)/events/actions";
+
+export interface AdminPhotoCredit {
+  cosplayerCn: string;
+  characterName: string;
+}
 
 export interface AdminPhoto {
   id: string;
   thumbUrl: string;
-  cosplayerCn: string;
-  characterName: string;
+  credits: AdminPhotoCredit[];
   isCover: boolean;
 }
 
 const btnCls =
   "rounded-md border border-border-strong px-2 py-1 text-xs text-fg-muted transition hover:border-fg-faint hover:text-fg disabled:opacity-40";
+const smallInputCls =
+  "min-w-0 flex-1 rounded-md border border-border-strong bg-page px-2 py-1 text-xs text-fg outline-none focus:border-fg-subtle";
+
+let rowKeySeq = 0;
+function makeRow(initial?: AdminPhotoCredit) {
+  return {
+    key: rowKeySeq++,
+    cosplayerCn: initial?.cosplayerCn ?? "",
+    characterName: initial?.characterName ?? ""
+  };
+}
+
+function CreditRowsFields({ initial }: { initial: AdminPhotoCredit[] }) {
+  const t = useTranslations("adminEvents");
+  const [rows, setRows] = useState(() =>
+    initial.length > 0 ? initial.map((c) => makeRow(c)) : [makeRow()]
+  );
+
+  return (
+    <div className="flex flex-col gap-2">
+      {rows.map((row) => (
+        <div key={row.key} className="flex gap-1">
+          <input
+            name="cosplayerCn"
+            defaultValue={row.cosplayerCn}
+            placeholder={t("cosplayerCn")}
+            maxLength={200}
+            className={smallInputCls}
+          />
+          <input
+            name="characterName"
+            defaultValue={row.characterName}
+            placeholder={t("characterName")}
+            maxLength={200}
+            className={smallInputCls}
+          />
+          {rows.length > 1 && (
+            <button
+              type="button"
+              aria-label={t("removeCosplayerAria")}
+              onClick={() => setRows((r) => r.filter((x) => x.key !== row.key))}
+              className={btnCls}
+            >
+              ×
+            </button>
+          )}
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={() => setRows((r) => [...r, makeRow()])}
+        className={`${btnCls} self-start`}
+      >
+        + {t("addCosplayer")}
+      </button>
+    </div>
+  );
+}
 
 export default function PhotoManager({ photos }: { photos: AdminPhoto[] }) {
   const t = useTranslations("adminEvents");
@@ -49,30 +112,10 @@ export default function PhotoManager({ photos }: { photos: AdminPhoto[] }) {
             )}
           </div>
 
-          <form action={updatePhotoCredit} className="flex flex-col gap-2">
+          <form action={updatePhotoCredits} className="flex flex-col gap-2">
             <input type="hidden" name="photoId" value={photo.id} />
-            <label className="flex flex-col gap-1 text-xs">
-              <span className="text-fg-subtle">
-                {t("cosplayerCn")} <span className="text-red-400">*</span>
-              </span>
-              <input
-                name="cosplayerCn"
-                defaultValue={photo.cosplayerCn}
-                required
-                maxLength={200}
-                className="rounded-md border border-border-strong bg-page px-2 py-1 text-xs text-fg outline-none focus:border-fg-subtle"
-              />
-            </label>
-            <label className="flex flex-col gap-1 text-xs">
-              <span className="text-fg-subtle">{t("characterName")}</span>
-              <input
-                name="characterName"
-                defaultValue={photo.characterName}
-                maxLength={200}
-                className="rounded-md border border-border-strong bg-page px-2 py-1 text-xs text-fg outline-none focus:border-fg-subtle"
-              />
-            </label>
-            <button type="submit" className={btnCls}>
+            <CreditRowsFields initial={photo.credits} />
+            <button type="submit" className={`${btnCls} self-start`}>
               {tc("save")}
             </button>
           </form>

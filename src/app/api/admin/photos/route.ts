@@ -48,6 +48,18 @@ export async function POST(req: NextRequest) {
     _max: { sortOrder: true }
   });
 
+  // Parallel arrays: one (cosplayerCn, characterName) pair per credit, shared
+  // across the whole batch this file was uploaded as part of. Rows with a
+  // blank CN are dropped (CN is the only required part of a credit).
+  const cns = form.getAll("cosplayerCn").map(String);
+  const chars = form.getAll("characterName").map(String);
+  const credits = cns
+    .map((cn, i) => ({
+      cosplayerCn: cn.trim().slice(0, 200),
+      characterName: (chars[i] ?? "").trim().slice(0, 200)
+    }))
+    .filter((c) => c.cosplayerCn.length > 0);
+
   const photo = await prisma.photo.create({
     data: {
       id: photoId,
@@ -63,7 +75,14 @@ export async function POST(req: NextRequest) {
       exifIso: processed.exif.iso,
       exifTakenAt: processed.exif.takenAt,
       exifCameraModel: processed.exif.cameraModel,
-      exifLensModel: processed.exif.lensModel
+      exifLensModel: processed.exif.lensModel,
+      credits: {
+        create: credits.map((c, i) => ({
+          cosplayerCn: c.cosplayerCn,
+          characterName: c.characterName,
+          sortOrder: i
+        }))
+      }
     }
   });
 

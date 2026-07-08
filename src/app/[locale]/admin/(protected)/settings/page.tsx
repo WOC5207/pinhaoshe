@@ -2,10 +2,11 @@ import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/db";
 import { formatDate } from "@/lib/datetime";
 import { siteImageUrl } from "@/lib/images";
-import { getSiteSettings } from "@/lib/settings";
+import { getSiteSettings, getContactMethods } from "@/lib/settings";
 import SiteSettingsForm from "@/components/admin/SiteSettingsForm";
 import SiteImageUploader from "@/components/admin/SiteImageUploader";
 import QuickLinksManager from "@/components/admin/QuickLinksManager";
+import ContactMethodsManager from "@/components/admin/ContactMethodsManager";
 
 export default async function SiteSettingsPage() {
   const t = await getTranslations("adminSite");
@@ -14,6 +15,7 @@ export default async function SiteSettingsPage() {
   const quickLinks = await prisma.quickLink.findMany({
     orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }]
   });
+  const contactMethods = await getContactMethods();
 
   return (
     <div className="flex flex-col gap-8">
@@ -47,6 +49,14 @@ export default async function SiteSettingsPage() {
           titleZh: q.titleZh,
           url: q.url,
           date: q.date ? formatDate(q.date) : ""
+        }))}
+      />
+
+      <ContactMethodsManager
+        methods={contactMethods.map((m) => ({
+          id: m.id,
+          labelEn: m.labelEn,
+          labelZh: m.labelZh
         }))}
       />
     </div>

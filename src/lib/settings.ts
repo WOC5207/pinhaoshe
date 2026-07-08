@@ -77,3 +77,10 @@ export function resolveHomeSubtitle(
     pickText(locale, settings.homeSubtitleEn, settings.homeSubtitleZh) || fallback
   );
 }
+
+/** Admin-configured options for the booking form's contact-method dropdown. */
+export const getContactMethods = cache(async () => {
+  return prisma.contactMethod.findMany({
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }]
+  });
+});

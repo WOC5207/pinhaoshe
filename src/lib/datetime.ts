@@ -27,3 +27,14 @@ export function formatDateTime(d: Date): string {
 export function formatSlotRange(start: Date, end: Date): string {
   return `${formatDate(start)} ${formatTime(start)}–${formatTime(end)}`;
 }
+
+/** Format an event's date range; falls back gracefully when either end is unset. */
+export function formatDateRange(
+  start: Date | null,
+  end: Date | null
+): string {
+  if (!start) return "";
+  const s = formatDate(start);
+  if (!end || end.getTime() === start.getTime()) return s;
+  return `${s} – ${formatDate(end)}`;
+}

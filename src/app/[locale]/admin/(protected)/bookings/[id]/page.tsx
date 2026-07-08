@@ -126,9 +126,15 @@ export default async function EditBookingEventPage({
                                 : ""
                             }
                           >
-                            <span className="font-semibold">{b.name}</span>
+                            <span className="font-semibold">
+                              {b.characterName
+                                ? `${b.name} · ${b.characterName}`
+                                : b.name}
+                            </span>
                             <span className="ml-2 text-fg-subtle">
-                              {[b.email, b.phone].filter(Boolean).join(" · ")}
+                              {[b.contactMethod, b.contactValue]
+                                .filter(Boolean)
+                                .join(": ")}
                             </span>
                             {b.notes && (
                               <p className="mt-0.5 max-w-xl whitespace-pre-line text-xs text-fg-subtle">

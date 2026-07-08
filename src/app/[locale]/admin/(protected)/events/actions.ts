@@ -20,7 +20,8 @@ const eventSchema = z
       .toLowerCase()
       .regex(/^[a-z0-9-]*$/)
       .max(100),
-    date: z.string().trim().max(30),
+    dateStart: z.string().trim().max(30),
+    dateEnd: z.string().trim().max(30),
     location: z.string().trim().max(300),
     descriptionEn: z.string().trim().max(5000),
     descriptionZh: z.string().trim().max(5000),
@@ -33,7 +34,8 @@ function parseEventForm(formData: FormData) {
     titleEn: formData.get("titleEn") ?? "",
     titleZh: formData.get("titleZh") ?? "",
     slug: formData.get("slug") ?? "",
-    date: formData.get("date") ?? "",
+    dateStart: formData.get("dateStart") ?? "",
+    dateEnd: formData.get("dateEnd") ?? "",
     location: formData.get("location") ?? "",
     descriptionEn: formData.get("descriptionEn") ?? "",
     descriptionZh: formData.get("descriptionZh") ?? "",
@@ -76,6 +78,17 @@ function toDate(value: string): Date | null {
   return isNaN(d.getTime()) ? null : d;
 }
 
+/** Returns null if dateEnd is set but earlier than dateStart. */
+function parseDateRange(
+  dateStartStr: string,
+  dateEndStr: string
+): { dateStart: Date | null; dateEnd: Date | null } | null {
+  const dateStart = toDate(dateStartStr);
+  const dateEnd = toDate(dateEndStr);
+  if (dateStart && dateEnd && dateEnd.getTime() < dateStart.getTime()) return null;
+  return { dateStart, dateEnd };
+}
+
 export async function createEvent(
   _prev: EventFormState,
   formData: FormData
@@ -84,6 +97,8 @@ export async function createEvent(
   const parsed = parseEventForm(formData);
   if (!parsed.success) return { error: "validation" };
   const d = parsed.data;
+  const range = parseDateRange(d.dateStart, d.dateEnd);
+  if (!range) return { error: "validation" };
 
   const slug = await uniqueSlug(d.slug || slugify(d.titleEn || d.titleZh));
   const event = await prisma.event.create({
@@ -94,7 +109,8 @@ export async function createEvent(
       descriptionEn: d.descriptionEn,
       descriptionZh: d.descriptionZh,
       location: d.location,
-      date: toDate(d.date),
+      dateStart: range.dateStart,
+      dateEnd: range.dateEnd,
       published: d.published
     }
   });
@@ -113,6 +129,8 @@ export async function updateEvent(
   const parsed = parseEventForm(formData);
   if (!parsed.success) return { error: "validation" };
   const d = parsed.data;
+  const range = parseDateRange(d.dateStart, d.dateEnd);
+  if (!range) return { error: "validation" };
 
   const existing = await prisma.event.findUnique({ where: { id } });
   if (!existing) return { error: "unknown" };
@@ -130,7 +148,8 @@ export async function updateEvent(
       descriptionEn: d.descriptionEn,
       descriptionZh: d.descriptionZh,
       location: d.location,
-      date: toDate(d.date),
+      dateStart: range.dateStart,
+      dateEnd: range.dateEnd,
       published: d.published
     }
   });
@@ -154,23 +173,40 @@ export async function deleteEvent(formData: FormData): Promise<void> {
   redirect(`/${locale}/admin/events`);
 }
 
-export async function updatePhotoCredit(formData: FormData): Promise<void> {
+/**
+ * Replaces all of a photo's credits at once. The form submits parallel
+ * `cosplayerCn`/`characterName` fields (one pair per repeatable row); rows
+ * with a blank CN are dropped (CN is the only required part of a credit).
+ */
+export async function updatePhotoCredits(formData: FormData): Promise<void> {
   await guard();
   const photoId = formData.get("photoId");
   if (typeof photoId !== "string") return;
-  const cosplayerCn = String(formData.get("cosplayerCn") ?? "")
-    .trim()
-    .slice(0, 200);
-  const characterName = String(formData.get("characterName") ?? "")
-    .trim()
-    .slice(0, 200);
-  // Cosplayer CN is required; ignore submissions that would blank it out
-  // (the form also enforces this client-side via the input's required attribute).
-  if (!cosplayerCn) return;
 
-  await prisma.photo
-    .update({ where: { id: photoId }, data: { cosplayerCn, characterName } })
-    .catch(() => {});
+  const cns = formData.getAll("cosplayerCn").map(String);
+  const chars = formData.getAll("characterName").map(String);
+  const pairs = cns
+    .map((cn, i) => ({
+      cosplayerCn: cn.trim().slice(0, 200),
+      characterName: (chars[i] ?? "").trim().slice(0, 200)
+    }))
+    .filter((p) => p.cosplayerCn.length > 0);
+
+  await prisma.$transaction([
+    prisma.photoCredit.deleteMany({ where: { photoId } }),
+    ...(pairs.length > 0
+      ? [
+          prisma.photoCredit.createMany({
+            data: pairs.map((p, i) => ({
+              photoId,
+              cosplayerCn: p.cosplayerCn,
+              characterName: p.characterName,
+              sortOrder: i
+            }))
+          })
+        ]
+      : [])
+  ]);
   revalidatePath("/", "layout");
 }
 

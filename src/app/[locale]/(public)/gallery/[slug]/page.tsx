@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/db";
-import { pickText, formatPhotoCredit } from "@/lib/content";
+import { pickText, formatCredits } from "@/lib/content";
 import { photoUrls } from "@/lib/images";
+import { formatDateRange } from "@/lib/datetime";
 import { formatPhotoExif } from "@/lib/exif";
 import { Link } from "@/i18n/navigation";
 import AlbumViewer, { type AlbumPhoto } from "@/components/gallery/AlbumViewer";
@@ -21,7 +22,10 @@ export default async function AlbumPage({
   const event = await prisma.event.findUnique({
     where: { slug },
     include: {
-      photos: { orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] }
+      photos: {
+        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+        include: { credits: { orderBy: { sortOrder: "asc" } } }
+      }
     }
   });
   // Unpublished events are fully hidden from the public.
@@ -34,7 +38,7 @@ export default async function AlbumPage({
       thumb: urls.thumb,
       med: urls.med,
       full: urls.full,
-      caption: formatPhotoCredit(p.cosplayerCn, p.characterName),
+      caption: formatCredits(p.credits),
       width: p.width,
       height: p.height,
       exif: formatPhotoExif(p)
@@ -57,7 +61,7 @@ export default async function AlbumPage({
         </h1>
         <p className="mt-1 text-sm text-fg-subtle">
           {[
-            event.date ? event.date.toISOString().slice(0, 10) : null,
+            formatDateRange(event.dateStart, event.dateEnd) || null,
             event.location || null,
             t("photosCount", { count: photos.length })
           ]
