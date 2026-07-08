@@ -37,9 +37,11 @@ ENV NODE_ENV=production \
     PORT=3000
 
 # Standalone server + static assets
+# (no COPY for /app/public — this project has no Next.js public/ folder;
+# all photos/logo are served at runtime from the PHOTOS_DIR volume via
+# custom API routes instead)
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/public ./public
 
 # Prisma schema/migrations + CLI (for `migrate deploy` on startup)
 COPY --from=builder /app/prisma ./prisma
