@@ -73,14 +73,14 @@ export default function BookingForm({
                   value={slot.id}
                   disabled={full}
                   required
-                  className="h-4 w-4 accent-white"
+                  className="h-4 w-4 accent-fg"
                 />
                 <span className="font-mono text-sm">
                   {fmt(slot.start)}–{slot.end.slice(11, 16)}
                 </span>
               </span>
               <span
-                className={`text-xs ${full ? "" : "text-emerald-300"}`}
+                className={`text-xs ${full ? "" : "text-success"}`}
               >
                 {full ? t("full") : t("slotsLeft", { count: slot.remaining })}
               </span>
@@ -144,7 +144,7 @@ export default function BookingForm({
       </fieldset>
 
       {errorMessage && (
-        <p className="rounded-lg bg-red-950/60 px-3 py-2 text-sm text-red-300">
+        <p className="rounded-lg bg-danger-surface px-3 py-2 text-sm text-danger">
           {errorMessage}
         </p>
       )}

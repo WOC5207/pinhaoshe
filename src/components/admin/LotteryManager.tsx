@@ -156,18 +156,18 @@ export default function LotteryManager({
         )}
 
         {spinError && (
-          <p className="text-xs text-red-400">{t(`spinError_${spinError}`)}</p>
+          <p className="text-xs text-danger">{t(`spinError_${spinError}`)}</p>
         )}
 
         {revealedWinner && (
-          <div className="w-full rounded-lg border border-emerald-800 bg-emerald-950/40 p-4 text-center">
-            <p className="text-xs uppercase tracking-wide text-emerald-400">
+          <div className="w-full rounded-lg border border-success-border bg-success-surface p-4 text-center">
+            <p className="text-xs uppercase tracking-wide text-success">
               {t("winnerPrize", { prize: revealedWinner.prizeName })}
             </p>
-            <p className="mt-1 text-lg font-bold text-emerald-200">
+            <p className="mt-1 text-lg font-bold text-success-strong">
               {displayName(revealedWinner)}
             </p>
-            <p className="font-mono text-sm text-emerald-400">
+            <p className="font-mono text-sm text-success">
               {revealedWinner.token}
             </p>
           </div>
@@ -272,7 +272,7 @@ function PrizeManager({
                   <input type="hidden" name="prizeId" value={p.id} />
                   <button
                     type="submit"
-                    className={`${btnCls} border-red-900 text-red-400 hover:border-red-700 hover:text-red-300`}
+                    className={`${btnCls} border-danger-border text-danger hover:border-danger hover:text-danger-strong`}
                   >
                     {tc("delete")}
                   </button>
@@ -326,7 +326,7 @@ function PrizeManager({
           + {t("addPrize")}
         </button>
         {state.error && (
-          <p className="text-xs text-red-400">{t("prizeValidationError")}</p>
+          <p className="text-xs text-danger">{t("prizeValidationError")}</p>
         )}
       </form>
     </section>

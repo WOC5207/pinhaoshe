@@ -60,7 +60,7 @@ export default async function BookingListPage() {
                     <span
                       className={
                         remaining > 0
-                          ? "shrink-0 rounded-md bg-emerald-950 px-2 py-0.5 text-xs text-emerald-300"
+                          ? "shrink-0 rounded-md bg-success-surface px-2 py-0.5 text-xs text-success"
                           : "shrink-0 rounded-md bg-surface-2 px-2 py-0.5 text-xs text-fg-subtle"
                       }
                     >

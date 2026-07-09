@@ -15,6 +15,18 @@
   --color-fg-faint: var(--color-fg-faint);
   --color-border: var(--color-border);
   --color-border-strong: var(--color-border-strong);
+  /* Semantic status colors (success/danger). Defined per-theme below so that
+     confirmations, errors, badges etc. stay legible in BOTH light and dark —
+     the previous hard-coded emerald/red Tailwind shades were tuned for dark
+     only and washed out on the light theme. */
+  --color-success: var(--color-success);
+  --color-success-strong: var(--color-success-strong);
+  --color-success-surface: var(--color-success-surface);
+  --color-success-border: var(--color-success-border);
+  --color-danger: var(--color-danger);
+  --color-danger-strong: var(--color-danger-strong);
+  --color-danger-surface: var(--color-danger-surface);
+  --color-danger-border: var(--color-danger-border);
 }
 
 :root {
@@ -32,6 +44,14 @@
   --color-fg-faint: #737373;
   --color-border: #e5e5e5;
   --color-border-strong: #d4d4d4;
+  --color-success: #047857;
+  --color-success-strong: #065f46;
+  --color-success-surface: rgba(5, 150, 105, 0.12);
+  --color-success-border: rgba(5, 150, 105, 0.35);
+  --color-danger: #b91c1c;
+  --color-danger-strong: #991b1b;
+  --color-danger-surface: rgba(220, 38, 38, 0.1);
+  --color-danger-border: rgba(220, 38, 38, 0.3);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -45,6 +65,14 @@
     --color-fg-faint: #737373;
     --color-border: #262626;
     --color-border-strong: #404040;
+    --color-success: #6ee7b7;
+    --color-success-strong: #a7f3d0;
+    --color-success-surface: rgba(6, 78, 59, 0.45);
+    --color-success-border: rgba(6, 95, 70, 0.7);
+    --color-danger: #f87171;
+    --color-danger-strong: #fca5a5;
+    --color-danger-surface: rgba(69, 10, 10, 0.55);
+    --color-danger-border: rgba(127, 29, 29, 0.7);
   }
 }
 
@@ -58,6 +86,14 @@
   --color-fg-faint: #737373;
   --color-border: #262626;
   --color-border-strong: #404040;
+  --color-success: #6ee7b7;
+  --color-success-strong: #a7f3d0;
+  --color-success-surface: rgba(6, 78, 59, 0.45);
+  --color-success-border: rgba(6, 95, 70, 0.7);
+  --color-danger: #f87171;
+  --color-danger-strong: #fca5a5;
+  --color-danger-surface: rgba(69, 10, 10, 0.55);
+  --color-danger-border: rgba(127, 29, 29, 0.7);
 }
 
 body {

@@ -84,3 +84,10 @@ export const getContactMethods = cache(async () => {
     orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }]
   });
 });
+
+/** Admin-configured links to the photographer's other sites/profiles. */
+export const getPersonalLinks = cache(async () => {
+  return prisma.personalLink.findMany({
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }]
+  });
+});

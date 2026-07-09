@@ -45,12 +45,12 @@ export default function LotteryEntryForm({
     return (
       <div className="flex flex-col gap-6">
         {state.ok ? (
-          <div className="rounded-xl border border-emerald-800 bg-emerald-950/40 p-6 text-center">
-            <p className="text-sm text-emerald-400">{t("successNotice")}</p>
-            <p className="mt-2 text-xs uppercase tracking-wide text-emerald-500">
+          <div className="rounded-xl border border-success-border bg-success-surface p-6 text-center">
+            <p className="text-sm text-success">{t("successNotice")}</p>
+            <p className="mt-2 text-xs uppercase tracking-wide text-success">
               {t("yourToken")}
             </p>
-            <p className="mt-1 font-mono text-2xl font-bold text-emerald-200">
+            <p className="mt-1 font-mono text-2xl font-bold text-success-strong">
               {state.token}
             </p>
           </div>
@@ -124,7 +124,7 @@ export default function LotteryEntryForm({
       </div>
 
       {errorMessage && (
-        <p className="rounded-lg bg-red-950/60 px-3 py-2 text-sm text-red-300">
+        <p className="rounded-lg bg-danger-surface px-3 py-2 text-sm text-danger">
           {errorMessage}
         </p>
       )}

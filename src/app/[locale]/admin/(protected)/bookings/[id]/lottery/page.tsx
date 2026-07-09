@@ -98,7 +98,7 @@ export default async function LotteryPage({
       <div className="rounded-xl border border-border bg-surface p-4">
         <p className="text-sm font-semibold">{t("shareLink")}</p>
         <div className="mt-2 flex items-center gap-2">
-          <code className="break-all rounded-md bg-page px-3 py-2 text-xs text-emerald-300">
+          <code className="break-all rounded-md bg-page px-3 py-2 text-xs text-success">
             {shareUrl}
           </code>
           <CopyButton text={shareUrl} />

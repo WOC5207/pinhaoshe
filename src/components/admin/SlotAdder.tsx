@@ -72,7 +72,7 @@ export default function SlotAdder({ eventId }: { eventId: string }) {
         </label>
       </div>
       {state.error && (
-        <p className="rounded-lg bg-red-950/60 px-3 py-2 text-sm text-red-300">
+        <p className="rounded-lg bg-danger-surface px-3 py-2 text-sm text-danger">
           {t("slotsValidationError")}
         </p>
       )}

@@ -6,16 +6,21 @@ import { photoUrls } from "@/lib/images";
 import { formatDate, formatDateRange } from "@/lib/datetime";
 import {
   getSiteSettings,
+  getPersonalLinks,
   resolveHomeTitle,
   resolveHomeSubtitle
 } from "@/lib/settings";
+import { getSiteStats } from "@/lib/stats";
 import EventPhotoStream, {
   type StreamEvent
 } from "@/components/EventPhotoStream";
 import BookingCalendar, {
   type CalendarSession
 } from "@/components/BookingCalendar";
-import UpcomingShows, { type QuickLinkItem } from "@/components/UpcomingShows";
+import QuickStats from "@/components/QuickStats";
+import PersonalLinksList, {
+  type PersonalLinkItem
+} from "@/components/PersonalLinksList";
 
 // Reads site settings + published events from the DB at request time (the
 // DB isn't available during the Docker build), like the other public pages.
@@ -32,7 +37,7 @@ export default async function HomePage() {
   const today = new Date();
   today.setUTCHours(0, 0, 0, 0);
 
-  const [events, bookingEvents, quickLinks] = await Promise.all([
+  const [events, bookingEvents, siteStats, personalLinks] = await Promise.all([
     prisma.event.findMany({
       where: { published: true },
       orderBy: [{ dateStart: "desc" }, { createdAt: "desc" }],
@@ -54,10 +59,8 @@ export default async function HomePage() {
         }
       }
     }),
-    prisma.quickLink.findMany({
-      where: { OR: [{ date: null }, { date: { gte: today } }] },
-      orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }]
-    })
+    getSiteStats(),
+    getPersonalLinks()
   ]);
 
   const calendarSessions: CalendarSession[] = bookingEvents.map((e) => ({
@@ -70,11 +73,10 @@ export default async function HomePage() {
     )
   }));
 
-  const quickLinkItems: QuickLinkItem[] = quickLinks.map((q) => ({
-    id: q.id,
-    title: pickText(locale, q.titleEn, q.titleZh),
-    url: q.url,
-    date: q.date ? formatDate(q.date) : null
+  const personalLinkItems: PersonalLinkItem[] = personalLinks.map((l) => ({
+    id: l.id,
+    label: pickText(locale, l.labelEn, l.labelZh),
+    url: l.url
   }));
 
   const streamEvents: StreamEvent[] = events
@@ -86,7 +88,7 @@ export default async function HomePage() {
       location: e.location,
       photos: e.photos.map((p) => ({
         id: p.id,
-        url: photoUrls(e.id, p.id).thumb,
+        url: photoUrls(e.id, p.id).med,
         alt: formatCredits(p.credits),
         width: p.width,
         height: p.height
@@ -128,10 +130,16 @@ export default async function HomePage() {
 
         <aside className="order-first flex flex-col gap-6 lg:order-none">
           <BookingCalendar sessions={calendarSessions} />
-          <UpcomingShows
-            items={quickLinkItems}
-            title={t("quickLinksTitle")}
-            emptyText={t("quickLinksEmpty")}
+          <QuickStats
+            stats={siteStats}
+            title={t("quickStatsTitle")}
+            photosLabel={t("quickStatsPhotos")}
+            albumsLabel={t("quickStatsAlbums")}
+            cosplayersLabel={t("quickStatsCosplayers")}
+          />
+          <PersonalLinksList
+            items={personalLinkItems}
+            title={t("personalLinksTitle")}
           />
         </aside>
       </div>

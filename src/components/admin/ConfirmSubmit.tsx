@@ -13,7 +13,7 @@ export default function ConfirmSubmit({
       onClick={(e) => {
         if (!confirm(confirmText)) e.preventDefault();
       }}
-      className="rounded-lg border border-red-900 px-4 py-2 text-sm text-red-400 transition hover:border-red-700 hover:text-red-300"
+      className="rounded-lg border border-danger-border px-4 py-2 text-sm text-danger transition hover:border-danger hover:text-danger-strong"
     >
       {label}
     </button>

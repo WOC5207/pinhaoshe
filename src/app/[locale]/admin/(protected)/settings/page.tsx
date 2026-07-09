@@ -1,20 +1,20 @@
 import { getTranslations } from "next-intl/server";
-import { prisma } from "@/lib/db";
-import { formatDate } from "@/lib/datetime";
 import { siteImageUrl } from "@/lib/images";
-import { getSiteSettings, getContactMethods } from "@/lib/settings";
+import {
+  getSiteSettings,
+  getContactMethods,
+  getPersonalLinks
+} from "@/lib/settings";
 import SiteSettingsForm from "@/components/admin/SiteSettingsForm";
 import SiteImageUploader from "@/components/admin/SiteImageUploader";
-import QuickLinksManager from "@/components/admin/QuickLinksManager";
+import PersonalLinksManager from "@/components/admin/PersonalLinksManager";
 import ContactMethodsManager from "@/components/admin/ContactMethodsManager";
 
 export default async function SiteSettingsPage() {
   const t = await getTranslations("adminSite");
 
   const settings = await getSiteSettings();
-  const quickLinks = await prisma.quickLink.findMany({
-    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }]
-  });
+  const personalLinks = await getPersonalLinks();
   const contactMethods = await getContactMethods();
 
   return (
@@ -42,13 +42,12 @@ export default async function SiteSettingsPage() {
         currentUrl={siteImageUrl(settings.backgroundImage)}
       />
 
-      <QuickLinksManager
-        links={quickLinks.map((q) => ({
-          id: q.id,
-          titleEn: q.titleEn,
-          titleZh: q.titleZh,
-          url: q.url,
-          date: q.date ? formatDate(q.date) : ""
+      <PersonalLinksManager
+        links={personalLinks.map((l) => ({
+          id: l.id,
+          labelEn: l.labelEn,
+          labelZh: l.labelZh,
+          url: l.url
         }))}
       />
 

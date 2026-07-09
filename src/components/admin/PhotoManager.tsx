@@ -314,7 +314,7 @@ export default function PhotoManager({ photos }: { photos: AdminPhoto[] }) {
               <input type="hidden" name="photoId" value={photo.id} />
               <button
                 type="submit"
-                className={`${btnCls} border-red-900 text-red-400 hover:border-red-700 hover:text-red-300`}
+                className={`${btnCls} border-danger-border text-danger hover:border-danger hover:text-danger-strong`}
               >
                 {tc("delete")}
               </button>
