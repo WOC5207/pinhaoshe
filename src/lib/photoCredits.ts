@@ -1,5 +1,6 @@
 import "server-only";
 import { isSocialPlatform } from "./social";
+import { prisma } from "./db";
 
 export interface CreditInput {
   cosplayerCn: string;
@@ -14,6 +15,37 @@ function isHttpUrl(value: string): boolean {
   } catch {
     return false;
   }
+}
+
+function sanitizeSocialLinks(rawLinks: unknown): { platform: string; url: string }[] {
+  if (!Array.isArray(rawLinks)) return [];
+  return rawLinks
+    .map((l): { platform: string; url: string } | null => {
+      if (typeof l !== "object" || l === null) return null;
+      const link = l as Record<string, unknown>;
+      const platform = String(link.platform ?? "").trim();
+      const url = String(link.url ?? "").trim().slice(0, 500);
+      if (!isSocialPlatform(platform) || !url || !isHttpUrl(url)) return null;
+      return { platform, url };
+    })
+    .filter((l): l is { platform: string; url: string } => l !== null)
+    .slice(0, 10);
+}
+
+/** Same validation as the nested socialLinks array in parseCreditsJson, but
+ * for a standalone JSON-encoded array (used by the cosplayer-profile editor,
+ * which edits a single cosplayer's social links independent of any photo). */
+export function parseSocialLinksJson(
+  raw: FormDataEntryValue | null
+): { platform: string; url: string }[] {
+  if (typeof raw !== "string") return [];
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return [];
+  }
+  return sanitizeSocialLinks(parsed);
 }
 
 /**
@@ -44,22 +76,45 @@ export function parseCreditsJson(raw: FormDataEntryValue | null): CreditInput[] 
       const cosplayerCn = String(e.cosplayerCn ?? "").trim().slice(0, 200);
       if (!cosplayerCn) return null;
       const characterName = String(e.characterName ?? "").trim().slice(0, 200);
-
-      const rawLinks = Array.isArray(e.socialLinks) ? e.socialLinks : [];
-      const socialLinks = rawLinks
-        .map((l): { platform: string; url: string } | null => {
-          if (typeof l !== "object" || l === null) return null;
-          const link = l as Record<string, unknown>;
-          const platform = String(link.platform ?? "").trim();
-          const url = String(link.url ?? "").trim().slice(0, 500);
-          if (!isSocialPlatform(platform) || !url || !isHttpUrl(url)) return null;
-          return { platform, url };
-        })
-        .filter((l): l is { platform: string; url: string } => l !== null)
-        .slice(0, 10);
+      const socialLinks = sanitizeSocialLinks(e.socialLinks);
 
       return { cosplayerCn, characterName, socialLinks };
     })
     .filter((c): c is CreditInput => c !== null)
     .slice(0, 20);
+}
+
+/**
+ * Keeps each cosplayer's remembered social-link profile (the `Cosplayer` /
+ * `CosplayerSocialLink` tables) in sync with whatever was just submitted for
+ * a photo credit, so the admin only has to type a cosplayer's links once —
+ * the photo-credit editors prefill from this later. Call after saving the
+ * actual PhotoCredit/SocialLink rows (those remain the source of truth for
+ * what renders on the gallery; this is a best-effort side store).
+ *
+ * Skips credits with no social links, so re-saving a photo without links
+ * (e.g. editing just the character name) never wipes a previously saved
+ * profile.
+ */
+export async function syncCosplayerProfiles(credits: CreditInput[]): Promise<void> {
+  for (const c of credits) {
+    if (!c.cosplayerCn || c.socialLinks.length === 0) continue;
+
+    const cosplayer = await prisma.cosplayer.upsert({
+      where: { cosplayerCn: c.cosplayerCn },
+      create: { cosplayerCn: c.cosplayerCn },
+      update: {}
+    });
+    await prisma.$transaction([
+      prisma.cosplayerSocialLink.deleteMany({ where: { cosplayerId: cosplayer.id } }),
+      prisma.cosplayerSocialLink.createMany({
+        data: c.socialLinks.map((s, i) => ({
+          cosplayerId: cosplayer.id,
+          platform: s.platform,
+          url: s.url,
+          sortOrder: i
+        }))
+      })
+    ]);
+  }
 }

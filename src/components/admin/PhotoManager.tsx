@@ -20,6 +20,11 @@ export interface AdminPhotoCredit {
   socialLinks: { platform: string; url: string }[];
 }
 
+export interface CosplayerProfile {
+  cosplayerCn: string;
+  socialLinks: { platform: string; url: string }[];
+}
+
 export interface AdminPhotoExif {
   focalLengthMm: string;
   aperture: string;
@@ -49,22 +54,29 @@ interface CreditRow {
   cosplayerCn: string;
   characterName: string;
   socialLinks: SocialLinkValue[];
+  // The CN this row's social links currently reflect — lets us tell when
+  // the CN has moved on to a different person and the links need to
+  // follow, instead of lingering from whoever was typed before.
+  linksSourceCn: string;
 }
 function makeRow(initial?: AdminPhotoCredit): CreditRow {
   return {
     key: rowKeySeq++,
     cosplayerCn: initial?.cosplayerCn ?? "",
     characterName: initial?.characterName ?? "",
-    socialLinks: (initial?.socialLinks ?? []).map((s) => emptySocialLink(s))
+    socialLinks: (initial?.socialLinks ?? []).map((s) => emptySocialLink(s)),
+    linksSourceCn: (initial?.cosplayerCn ?? "").trim()
   };
 }
 
 function CreditsForm({
   photoId,
-  initial
+  initial,
+  cosplayers
 }: {
   photoId: string;
   initial: AdminPhotoCredit[];
+  cosplayers: CosplayerProfile[];
 }) {
   const t = useTranslations("adminEvents");
   const tc = useTranslations("common");
@@ -74,6 +86,26 @@ function CreditsForm({
 
   function updateRow(key: number, patch: Partial<CreditRow>) {
     setRows((rs) => rs.map((r) => (r.key === key ? { ...r, ...patch } : r)));
+  }
+
+  // Keep a row's social links in sync with whichever CN is currently typed
+  // in it: once the admin finishes editing the CN, if it's actually changed
+  // since the links were last synced, replace them with the new CN's
+  // remembered profile (or clear them if there's no match) — so links never
+  // linger from a CN that's since been cleared or swapped for someone else.
+  function syncLinksToCn(key: number, typedCn: string) {
+    const cn = typedCn.trim();
+    setRows((rs) =>
+      rs.map((r) => {
+        if (r.key !== key || cn === r.linksSourceCn) return r;
+        const profile = cosplayers.find((c) => c.cosplayerCn === cn);
+        return {
+          ...r,
+          linksSourceCn: cn,
+          socialLinks: profile ? profile.socialLinks.map((s) => emptySocialLink(s)) : []
+        };
+      })
+    );
   }
 
   const creditsJson = JSON.stringify(
@@ -97,8 +129,10 @@ function CreditsForm({
             <input
               value={row.cosplayerCn}
               onChange={(e) => updateRow(row.key, { cosplayerCn: e.target.value })}
+              onBlur={(e) => syncLinksToCn(row.key, e.target.value)}
               placeholder={t("cosplayerCn")}
               maxLength={200}
+              list="known-cosplayers"
               className={smallInputCls}
             />
             <input
@@ -245,7 +279,13 @@ function ExifForm({
   );
 }
 
-export default function PhotoManager({ photos }: { photos: AdminPhoto[] }) {
+export default function PhotoManager({
+  photos,
+  cosplayers
+}: {
+  photos: AdminPhoto[];
+  cosplayers: CosplayerProfile[];
+}) {
   const t = useTranslations("adminEvents");
   const tc = useTranslations("common");
 
@@ -275,7 +315,11 @@ export default function PhotoManager({ photos }: { photos: AdminPhoto[] }) {
             )}
           </div>
 
-          <CreditsForm photoId={photo.id} initial={photo.credits} />
+          <CreditsForm
+            photoId={photo.id}
+            initial={photo.credits}
+            cosplayers={cosplayers}
+          />
           <ExifForm photoId={photo.id} initial={photo.exif} />
 
           <div className="flex flex-wrap gap-2">

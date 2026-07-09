@@ -30,6 +30,15 @@ export default async function AdminDashboardPage() {
           </p>
         </Link>
         <Link
+          href="/admin/cosplayers"
+          className="rounded-xl border border-border bg-surface p-6 transition hover:border-border-strong"
+        >
+          <h2 className="text-lg font-semibold">{t("cosplayers")}</h2>
+          <p className="mt-1 text-sm text-fg-subtle">
+            {t("cosplayersCardHint")}
+          </p>
+        </Link>
+        <Link
           href="/admin/settings"
           className="rounded-xl border border-border bg-surface p-6 transition hover:border-border-strong"
         >

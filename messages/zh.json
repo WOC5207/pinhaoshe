@@ -54,9 +54,11 @@
     "dashboard": "控制台",
     "events": "相册管理",
     "bookings": "预约管理",
+    "cosplayers": "Coser 管理",
     "welcome": "欢迎回来，请选择要管理的内容。",
     "eventsCardHint": "创建相册、上传照片、发布活动。",
     "bookingsCardHint": "创建可预约活动并管理预约。",
+    "cosplayersCardHint": "管理已记住的 coser 及其社交主页链接。",
     "site": "网站设置",
     "siteCardHint": "自定义站点标题、首页文案、背景和 Logo。"
   },
@@ -116,6 +118,16 @@
     "moveUp": "前移",
     "moveDown": "后移",
     "viewPublic": "查看公开页面"
+  },
+  "adminCosplayers": {
+    "title": "Coser 管理",
+    "intro": "已记住的 coser 及其社交主页链接。每次保存带链接的照片署名时会自动同步，下次遇到同一 CN 时会自动填充——也可以直接在这里管理。",
+    "cosplayerCnPlaceholder": "Coser CN",
+    "addCosplayer": "添加 coser",
+    "noCosplayers": "还没有记住任何 coser——首次保存带社交链接的照片署名时会自动添加。",
+    "validationError": "请输入 coser 的 CN。",
+    "duplicateError": "已存在相同 CN 的 coser。",
+    "confirmDelete": "删除该 coser 的记住信息？这不会影响已经署名给他们的照片。"
   },
   "adminSite": {
     "title": "网站设置",

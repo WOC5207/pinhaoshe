@@ -91,3 +91,15 @@ export const getPersonalLinks = cache(async () => {
     orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }]
   });
 });
+
+/**
+ * Remembered cosplayer social-link profiles (see syncCosplayerProfiles in
+ * src/lib/photoCredits.ts), used to prefill the photo-credit editors so the
+ * admin doesn't have to retype a cosplayer's links on every new photo.
+ */
+export const getCosplayerRoster = cache(async () => {
+  return prisma.cosplayer.findMany({
+    include: { socialLinks: { orderBy: { sortOrder: "asc" } } },
+    orderBy: { cosplayerCn: "asc" }
+  });
+});

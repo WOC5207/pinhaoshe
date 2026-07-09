@@ -3,7 +3,15 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import SocialLinksEditor, { type SocialLinkValue } from "./SocialLinksEditor";
+import SocialLinksEditor, {
+  emptySocialLink,
+  type SocialLinkValue
+} from "./SocialLinksEditor";
+
+export interface CosplayerProfile {
+  cosplayerCn: string;
+  socialLinks: { platform: string; url: string }[];
+}
 
 type UploadStatus = { total: number; done: number; failed: string[] };
 type Mode = "single" | "multiple";
@@ -12,11 +20,22 @@ interface Row {
   cosplayerCn: string;
   characterName: string;
   socialLinks: SocialLinkValue[];
+  // The CN this row's social links currently reflect (from a profile match,
+  // or "" if cleared/no match) — lets us tell when the CN has moved on to a
+  // different person and the links need to follow, instead of lingering
+  // from whoever was typed before.
+  linksSourceCn: string;
 }
 
 let rowKeySeq = 0;
 function emptyRow(): Row {
-  return { key: rowKeySeq++, cosplayerCn: "", characterName: "", socialLinks: [] };
+  return {
+    key: rowKeySeq++,
+    cosplayerCn: "",
+    characterName: "",
+    socialLinks: [],
+    linksSourceCn: ""
+  };
 }
 
 const inputCls =
@@ -30,7 +49,13 @@ const modeBtnCls = (active: boolean) =>
 const btnCls =
   "rounded-md border border-border-strong px-2 py-1 text-xs text-fg-muted transition hover:border-fg-faint hover:text-fg disabled:opacity-40";
 
-export default function PhotoUploader({ eventId }: { eventId: string }) {
+export default function PhotoUploader({
+  eventId,
+  cosplayers
+}: {
+  eventId: string;
+  cosplayers: CosplayerProfile[];
+}) {
   const t = useTranslations("adminEvents");
   const tc = useTranslations("common");
   const router = useRouter();
@@ -67,6 +92,26 @@ export default function PhotoUploader({ eventId }: { eventId: string }) {
     setRows((rs) => rs.map((r) => (r.key === key ? { ...r, ...patch } : r)));
   }
 
+  // Keep a row's social links in sync with whichever CN is currently typed
+  // in it: once the admin finishes editing the CN, if it's actually changed
+  // since the links were last synced, replace them with the new CN's
+  // remembered profile (or clear them if there's no match) — so links never
+  // linger from a CN that's since been cleared or swapped for someone else.
+  function syncLinksToCn(key: number, typedCn: string) {
+    const cn = typedCn.trim();
+    setRows((rs) =>
+      rs.map((r) => {
+        if (r.key !== key || cn === r.linksSourceCn) return r;
+        const profile = cosplayers.find((c) => c.cosplayerCn === cn);
+        return {
+          ...r,
+          linksSourceCn: cn,
+          socialLinks: profile ? profile.socialLinks.map((s) => emptySocialLink(s)) : []
+        };
+      })
+    );
+  }
+
   async function handleCreate() {
     if (!canCreate) return;
     setBusy(true);
@@ -99,6 +144,11 @@ export default function PhotoUploader({ eventId }: { eventId: string }) {
 
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-dashed border-border-strong p-4">
+      <datalist id="known-cosplayers">
+        {cosplayers.map((c) => (
+          <option key={c.cosplayerCn} value={c.cosplayerCn} />
+        ))}
+      </datalist>
       <div className="flex flex-wrap items-center gap-3">
         <label className="flex w-fit cursor-pointer items-center gap-2 rounded-lg border border-border-strong px-4 py-2 text-sm text-fg-muted transition hover:border-fg-subtle hover:text-fg">
           <input
@@ -147,8 +197,10 @@ export default function PhotoUploader({ eventId }: { eventId: string }) {
               <input
                 value={row.cosplayerCn}
                 onChange={(e) => updateRow(row.key, { cosplayerCn: e.target.value })}
+                onBlur={(e) => syncLinksToCn(row.key, e.target.value)}
                 placeholder={t("cosplayerCn")}
                 maxLength={200}
+                list="known-cosplayers"
                 className={inputCls}
               />
               <input

@@ -54,9 +54,11 @@
     "dashboard": "Dashboard",
     "events": "Gallery events",
     "bookings": "Bookings",
+    "cosplayers": "Cosplayers",
     "welcome": "Welcome back. Choose a section to manage.",
     "eventsCardHint": "Create albums, upload photos, publish events.",
     "bookingsCardHint": "Create bookable events and manage reservations.",
+    "cosplayersCardHint": "Manage remembered cosplayers and their social links.",
     "site": "Site settings",
     "siteCardHint": "Customize the site title, homepage text, background and logo."
   },
@@ -116,6 +118,16 @@
     "moveUp": "Move earlier",
     "moveDown": "Move later",
     "viewPublic": "View public page"
+  },
+  "adminCosplayers": {
+    "title": "Cosplayers",
+    "intro": "Remembered cosplayers and their social links. These are kept in sync automatically whenever you save a photo credit with links, and are offered as autofill the next time that same CN comes up — or manage them directly here.",
+    "cosplayerCnPlaceholder": "Cosplayer CN",
+    "addCosplayer": "Add cosplayer",
+    "noCosplayers": "No remembered cosplayers yet — they're added automatically the first time you save a photo credit with social links.",
+    "validationError": "Please enter a cosplayer CN.",
+    "duplicateError": "A cosplayer with that CN already exists.",
+    "confirmDelete": "Delete this cosplayer's remembered profile? This won't affect any photos already crediting them."
   },
   "adminSite": {
     "title": "Site settings",

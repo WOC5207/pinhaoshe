@@ -56,6 +56,12 @@ export default async function AdminLayout({
                 {t("admin.bookings")}
               </Link>
               <Link
+                href="/admin/cosplayers"
+                className="text-fg-muted hover:text-fg"
+              >
+                {t("admin.cosplayers")}
+              </Link>
+              <Link
                 href="/admin/settings"
                 className="text-fg-muted hover:text-fg"
               >

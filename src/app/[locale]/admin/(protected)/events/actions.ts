@@ -7,7 +7,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { isAdmin } from "@/lib/auth";
 import { deleteEventFiles, deletePhotoFiles } from "@/lib/images";
-import { parseCreditsJson } from "@/lib/photoCredits";
+import { parseCreditsJson, syncCosplayerProfiles } from "@/lib/photoCredits";
 import { parseShutterSpeed } from "@/lib/exif";
 
 export type EventFormState = { error?: "validation" | "unknown"; ok?: boolean };
@@ -209,6 +209,7 @@ export async function updatePhotoCredits(formData: FormData): Promise<void> {
       })
     )
   ]);
+  await syncCosplayerProfiles(credits);
   revalidatePath("/", "layout");
 }
 

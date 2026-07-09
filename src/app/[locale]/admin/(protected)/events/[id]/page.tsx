@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/db";
 import { photoUrls } from "@/lib/images";
 import { formatShutterSpeedInput } from "@/lib/exif";
+import { getCosplayerRoster } from "@/lib/settings";
 import { Link } from "@/i18n/navigation";
 import EventForm from "@/components/admin/EventForm";
 import PhotoUploader from "@/components/admin/PhotoUploader";
@@ -34,6 +35,11 @@ export default async function EditEventPage({
     }
   });
   if (!event) notFound();
+
+  const cosplayers = (await getCosplayerRoster()).map((c) => ({
+    cosplayerCn: c.cosplayerCn,
+    socialLinks: c.socialLinks.map((s) => ({ platform: s.platform, url: s.url }))
+  }));
 
   const photos: AdminPhoto[] = event.photos.map((p) => ({
     id: p.id,
@@ -95,8 +101,8 @@ export default async function EditEventPage({
 
       <section className="flex flex-col gap-4 border-t border-border pt-6">
         <h2 className="text-xl font-semibold">{t("photos")}</h2>
-        <PhotoUploader eventId={event.id} />
-        <PhotoManager photos={photos} />
+        <PhotoUploader eventId={event.id} cosplayers={cosplayers} />
+        <PhotoManager photos={photos} cosplayers={cosplayers} />
       </section>
     </div>
   );

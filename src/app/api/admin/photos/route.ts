@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { isAdmin } from "@/lib/auth";
 import { config } from "@/lib/config";
 import { ALLOWED_UPLOAD_TYPES, processAndStorePhoto } from "@/lib/images";
-import { parseCreditsJson } from "@/lib/photoCredits";
+import { parseCreditsJson, syncCosplayerProfiles } from "@/lib/photoCredits";
 
 export async function POST(req: NextRequest) {
   if (!(await isAdmin())) {
@@ -84,6 +84,8 @@ export async function POST(req: NextRequest) {
       }
     }
   });
+
+  await syncCosplayerProfiles(credits);
 
   return NextResponse.json({ id: photo.id });
 }
