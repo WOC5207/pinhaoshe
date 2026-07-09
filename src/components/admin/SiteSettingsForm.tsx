@@ -137,12 +137,12 @@ export default function SiteSettingsForm({
       </section>
 
       {state.error && (
-        <p className="rounded-lg bg-red-950/60 px-3 py-2 text-sm text-red-300">
+        <p className="rounded-lg bg-danger-surface px-3 py-2 text-sm text-danger">
           {t("saveError")}
         </p>
       )}
       {state.ok && (
-        <p className="rounded-lg bg-emerald-950/60 px-3 py-2 text-sm text-emerald-300">
+        <p className="rounded-lg bg-success-surface px-3 py-2 text-sm text-success">
           {tc("saved")}
         </p>
       )}

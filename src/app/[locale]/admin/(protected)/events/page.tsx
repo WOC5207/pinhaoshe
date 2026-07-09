@@ -68,7 +68,7 @@ export default async function AdminEventsPage() {
                     <span
                       className={
                         event.published
-                          ? "rounded-md bg-emerald-950 px-2 py-0.5 text-xs text-emerald-300"
+                          ? "rounded-md bg-success-surface px-2 py-0.5 text-xs text-success"
                           : "rounded-md bg-surface-2 px-2 py-0.5 text-xs text-fg-subtle"
                       }
                     >

@@ -97,7 +97,7 @@ export default function ContactMethodsManager({
                   <input type="hidden" name="id" value={method.id} />
                   <button
                     type="submit"
-                    className={`${btnCls} border-red-900 text-red-400 hover:border-red-700 hover:text-red-300`}
+                    className={`${btnCls} border-danger-border text-danger hover:border-danger hover:text-danger-strong`}
                   >
                     {tc("delete")}
                   </button>
@@ -136,7 +136,7 @@ export default function ContactMethodsManager({
         </button>
       </form>
       {state.error && (
-        <p className="text-xs text-red-400">{t("contactMethodValidationError")}</p>
+        <p className="text-xs text-danger">{t("contactMethodValidationError")}</p>
       )}
     </section>
   );

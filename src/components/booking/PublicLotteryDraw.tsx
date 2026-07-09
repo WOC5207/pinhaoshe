@@ -69,11 +69,11 @@ export default function PublicLotteryDraw({
     return (
       <div className="flex flex-col items-center gap-4 rounded-xl border border-border bg-surface p-6">
         <h2 className="text-lg font-semibold">{t("spinTitle")}</h2>
-        <div className="w-full rounded-lg border border-emerald-800 bg-emerald-950/40 p-4 text-center">
-          <p className="text-xs uppercase tracking-wide text-emerald-400">
+        <div className="w-full rounded-lg border border-success-border bg-success-surface p-4 text-center">
+          <p className="text-xs uppercase tracking-wide text-success">
             {t("alreadySpunNotice")}
           </p>
-          <p className="mt-1 text-lg font-bold text-emerald-200">
+          <p className="mt-1 text-lg font-bold text-success-strong">
             {myPrize?.name ?? ""}
           </p>
         </div>
@@ -135,15 +135,15 @@ export default function PublicLotteryDraw({
       )}
 
       {spinError && (
-        <p className="text-xs text-red-400">{t(`spinError_${spinError}`)}</p>
+        <p className="text-xs text-danger">{t(`spinError_${spinError}`)}</p>
       )}
 
       {revealedWinner && (
-        <div className="w-full rounded-lg border border-emerald-800 bg-emerald-950/40 p-4 text-center">
-          <p className="text-xs uppercase tracking-wide text-emerald-400">
+        <div className="w-full rounded-lg border border-success-border bg-success-surface p-4 text-center">
+          <p className="text-xs uppercase tracking-wide text-success">
             {t("winnerNotice")}
           </p>
-          <p className="mt-1 text-lg font-bold text-emerald-200">
+          <p className="mt-1 text-lg font-bold text-success-strong">
             {revealedWinner.prizeName}
           </p>
         </div>

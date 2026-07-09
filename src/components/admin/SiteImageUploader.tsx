@@ -81,7 +81,7 @@ export default function SiteImageUploader({
           <form action={removeSiteImage.bind(null, kind)}>
             <button
               type="submit"
-              className="rounded-lg border border-red-900 px-3 py-1.5 text-sm text-red-400 transition hover:border-red-700 hover:text-red-300"
+              className="rounded-lg border border-danger-border px-3 py-1.5 text-sm text-danger transition hover:border-danger hover:text-danger-strong"
             >
               {t(L.remove)}
             </button>
@@ -103,7 +103,7 @@ export default function SiteImageUploader({
         <span>{busy ? "…" : `+ ${t(L.upload)}`}</span>
       </label>
 
-      {error && <p className="text-sm text-red-400">{t(L.error)}</p>}
+      {error && <p className="text-sm text-danger">{t(L.error)}</p>}
     </section>
   );
 }

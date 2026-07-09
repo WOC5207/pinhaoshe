@@ -75,50 +75,41 @@ export async function updateSiteSettings(
   return { ok: true };
 }
 
-export type QuickLinkState = { error?: "validation"; ok?: boolean };
+export type PersonalLinkState = { error?: "validation"; ok?: boolean };
 
-const quickLinkSchema = z
+const personalLinkSchema = z
   .object({
-    titleEn: z.string().trim().max(200),
-    titleZh: z.string().trim().max(200),
-    url: z.string().trim().max(500),
-    date: z.string().trim().max(30)
+    labelEn: z.string().trim().max(200),
+    labelZh: z.string().trim().max(200),
+    url: z.string().trim().max(500)
   })
-  .refine((d) => d.titleEn.length > 0 || d.titleZh.length > 0);
+  .refine((d) => d.labelEn.length > 0 || d.labelZh.length > 0);
 
-function parseQuickLinkForm(formData: FormData) {
-  return quickLinkSchema.safeParse({
-    titleEn: formData.get("titleEn") ?? "",
-    titleZh: formData.get("titleZh") ?? "",
-    url: formData.get("url") ?? "",
-    date: formData.get("date") ?? ""
+function parsePersonalLinkForm(formData: FormData) {
+  return personalLinkSchema.safeParse({
+    labelEn: formData.get("labelEn") ?? "",
+    labelZh: formData.get("labelZh") ?? "",
+    url: formData.get("url") ?? ""
   });
 }
 
-function toDateOrNull(value: string): Date | null {
-  if (!value) return null;
-  const d = new Date(`${value}T00:00:00Z`);
-  return isNaN(d.getTime()) ? null : d;
-}
-
-export async function addQuickLink(
-  _prev: QuickLinkState,
+export async function addPersonalLink(
+  _prev: PersonalLinkState,
   formData: FormData
-): Promise<QuickLinkState> {
+): Promise<PersonalLinkState> {
   await guard();
-  const parsed = parseQuickLinkForm(formData);
+  const parsed = parsePersonalLinkForm(formData);
   if (!parsed.success) return { error: "validation" };
   const d = parsed.data;
 
-  const maxOrder = await prisma.quickLink.aggregate({
+  const maxOrder = await prisma.personalLink.aggregate({
     _max: { sortOrder: true }
   });
-  await prisma.quickLink.create({
+  await prisma.personalLink.create({
     data: {
-      titleEn: d.titleEn,
-      titleZh: d.titleZh,
+      labelEn: d.labelEn,
+      labelZh: d.labelZh,
       url: d.url,
-      date: toDateOrNull(d.date),
       sortOrder: (maxOrder._max.sortOrder ?? 0) + 1
     }
   });
@@ -127,37 +118,32 @@ export async function addQuickLink(
   return { ok: true };
 }
 
-export async function updateQuickLink(formData: FormData): Promise<void> {
+export async function updatePersonalLink(formData: FormData): Promise<void> {
   await guard();
   const id = formData.get("id");
   if (typeof id !== "string") return;
-  const parsed = parseQuickLinkForm(formData);
+  const parsed = parsePersonalLinkForm(formData);
   if (!parsed.success) return;
   const d = parsed.data;
 
-  await prisma.quickLink
+  await prisma.personalLink
     .update({
       where: { id },
-      data: {
-        titleEn: d.titleEn,
-        titleZh: d.titleZh,
-        url: d.url,
-        date: toDateOrNull(d.date)
-      }
+      data: { labelEn: d.labelEn, labelZh: d.labelZh, url: d.url }
     })
     .catch(() => {});
   revalidatePath("/", "layout");
 }
 
-export async function deleteQuickLink(formData: FormData): Promise<void> {
+export async function deletePersonalLink(formData: FormData): Promise<void> {
   await guard();
   const id = formData.get("id");
   if (typeof id !== "string") return;
-  await prisma.quickLink.delete({ where: { id } }).catch(() => {});
+  await prisma.personalLink.delete({ where: { id } }).catch(() => {});
   revalidatePath("/", "layout");
 }
 
-export async function moveQuickLink(formData: FormData): Promise<void> {
+export async function movePersonalLink(formData: FormData): Promise<void> {
   await guard();
   const id = formData.get("id");
   const direction = formData.get("direction");
@@ -165,7 +151,7 @@ export async function moveQuickLink(formData: FormData): Promise<void> {
     return;
 
   await prisma.$transaction(async (tx) => {
-    const links = await tx.quickLink.findMany({
+    const links = await tx.personalLink.findMany({
       orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
       select: { id: true }
     });
@@ -176,7 +162,7 @@ export async function moveQuickLink(formData: FormData): Promise<void> {
     const order = links.map((l) => l.id);
     [order[index], order[swapWith]] = [order[swapWith], order[index]];
     for (let i = 0; i < order.length; i++) {
-      await tx.quickLink.update({
+      await tx.personalLink.update({
         where: { id: order[i] },
         data: { sortOrder: i + 1 }
       });

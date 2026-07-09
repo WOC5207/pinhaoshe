@@ -36,12 +36,12 @@ export default async function MyBookingPage({
       <h1 className="text-2xl font-bold">{t("yourBooking")}</h1>
 
       {isNew && !cancelled && (
-        <p className="rounded-xl border border-emerald-900 bg-emerald-950/50 p-4 text-sm text-emerald-300">
+        <p className="rounded-xl border border-success-border bg-success-surface p-4 text-sm text-success">
           {t("saveLinkNotice")}
         </p>
       )}
       {cancelled && (
-        <p className="rounded-xl border border-red-900 bg-red-950/50 p-4 text-sm text-red-300">
+        <p className="rounded-xl border border-danger-border bg-danger-surface p-4 text-sm text-danger">
           {t("bookingCancelledNotice")}
         </p>
       )}
@@ -61,7 +61,7 @@ export default async function MyBookingPage({
           <Row label={t("characterNameLabel")}>{booking.characterName}</Row>
         )}
         <Row label={t("statusLabel")}>
-          <span className={cancelled ? "text-red-400" : "text-emerald-300"}>
+          <span className={cancelled ? "text-danger" : "text-success"}>
             {cancelled ? t("statusCancelled") : t("statusConfirmed")}
           </span>
         </Row>

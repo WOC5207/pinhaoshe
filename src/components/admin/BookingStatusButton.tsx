@@ -35,7 +35,7 @@ export default function BookingStatusButton({
         {isConfirmed ? t("cancelBooking") : t("restoreBooking")}
       </button>
       {state.error === "slotFull" && (
-        <span className="max-w-[16rem] text-right text-xs text-red-400">
+        <span className="max-w-[16rem] text-right text-xs text-danger">
           {t("restoreSlotFull")}
         </span>
       )}

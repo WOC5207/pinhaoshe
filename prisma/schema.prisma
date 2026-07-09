@@ -139,16 +139,15 @@ model SiteSettings {
   updatedAt           DateTime @updatedAt
 }
 
-// Admin-managed "upcoming show" quick links, shown in the homepage sidebar.
-// Not tied to bookings/gallery — just a curated list of conventions etc.
-model QuickLink {
-  id        String    @id @default(cuid())
-  titleEn   String
-  titleZh   String
-  url       String    @default("")
-  date      DateTime?
-  sortOrder Int       @default(0)
-  createdAt DateTime  @default(now())
+// Admin-managed links to the photographer's other sites/profiles, shown in
+// the homepage sidebar below the quick-stats card.
+model PersonalLink {
+  id        String   @id @default(cuid())
+  labelEn   String
+  labelZh   String
+  url       String   @default("")
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
 }
 
 // Admin-configured options for the booking form's contact-method dropdown

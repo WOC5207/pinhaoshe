@@ -204,7 +204,7 @@ export default function PhotoUploader({ eventId }: { eventId: string }) {
               : t("uploadDone")}
           </p>
           {status.failed.map((name) => (
-            <p key={name} className="text-red-400">
+            <p key={name} className="text-danger">
               {t("uploadFailedFile", { name })}
             </p>
           ))}
