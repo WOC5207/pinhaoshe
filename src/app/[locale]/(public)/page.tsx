@@ -10,7 +10,6 @@ import {
   resolveHomeTitle,
   resolveHomeSubtitle
 } from "@/lib/settings";
-import { getSiteStats } from "@/lib/stats";
 import EventPhotoStream, {
   type StreamEvent
 } from "@/components/EventPhotoStream";
@@ -37,7 +36,7 @@ export default async function HomePage() {
   const today = new Date();
   today.setUTCHours(0, 0, 0, 0);
 
-  const [events, bookingEvents, siteStats, personalLinks] = await Promise.all([
+  const [events, bookingEvents, personalLinks] = await Promise.all([
     prisma.event.findMany({
       where: { published: true },
       orderBy: [{ dateStart: "desc" }, { createdAt: "desc" }],
@@ -59,9 +58,23 @@ export default async function HomePage() {
         }
       }
     }),
-    getSiteStats(),
     getPersonalLinks()
   ]);
+
+  // Derived from the already-loaded published events rather than extra count
+  // queries — cheap in memory, and one fewer round-trip on the busiest page
+  // (SQLite serves us over a single connection, so queries don't parallelize).
+  const siteStats = {
+    photoCount: events.reduce((n, e) => n + e.photos.length, 0),
+    albumCount: events.length,
+    cosplayerCount: new Set(
+      events.flatMap((e) =>
+        e.photos.flatMap((p) =>
+          p.credits.map((c) => c.cosplayerCn).filter((cn) => cn.length > 0)
+        )
+      )
+    ).size
+  };
 
   const calendarSessions: CalendarSession[] = bookingEvents.map((e) => ({
     date: formatDate(e.date),
