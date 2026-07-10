@@ -32,7 +32,10 @@ export default async function SiteSettingsPage() {
           homeTitleZh: settings.homeTitleZh,
           homeSubtitleEn: settings.homeSubtitleEn,
           homeSubtitleZh: settings.homeSubtitleZh,
-          backgroundColor: settings.backgroundColor
+          backgroundColor: settings.backgroundColor,
+          bookingEnabled: settings.bookingEnabled,
+          lotteryEnabled: settings.lotteryEnabled,
+          cosplayersEnabled: settings.cosplayersEnabled
         }}
       />
 

@@ -23,6 +23,9 @@ export default function SiteSettingsForm({
     homeSubtitleEn: string;
     homeSubtitleZh: string;
     backgroundColor: string;
+    bookingEnabled: boolean;
+    lotteryEnabled: boolean;
+    cosplayersEnabled: boolean;
   };
 }) {
   const t = useTranslations("adminSite");
@@ -133,6 +136,41 @@ export default function SiteSettingsForm({
             </button>
           )}
           <input type="hidden" name="backgroundColor" value={color} />
+        </div>
+      </section>
+
+      {/* Site features */}
+      <section className="flex flex-col gap-3 border-t border-border pt-6">
+        <h2 className="text-lg font-semibold">{t("featuresSection")}</h2>
+        <p className="-mt-1 text-xs text-fg-subtle">{t("featuresHint")}</p>
+        <div className="flex flex-col gap-2">
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              name="bookingEnabled"
+              defaultChecked={initial.bookingEnabled}
+              className="h-4 w-4 accent-fg"
+            />
+            <span>{t("bookingEnabledLabel")}</span>
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              name="lotteryEnabled"
+              defaultChecked={initial.lotteryEnabled}
+              className="h-4 w-4 accent-fg"
+            />
+            <span>{t("lotteryEnabledLabel")}</span>
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              name="cosplayersEnabled"
+              defaultChecked={initial.cosplayersEnabled}
+              className="h-4 w-4 accent-fg"
+            />
+            <span>{t("cosplayersEnabledLabel")}</span>
+          </label>
         </div>
       </section>
 

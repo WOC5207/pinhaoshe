@@ -9,6 +9,7 @@ import { isAdmin } from "@/lib/auth";
 import { deleteEventFiles, deletePhotoFiles } from "@/lib/images";
 import { parseCreditsJson, syncCosplayerProfiles } from "@/lib/photoCredits";
 import { parseShutterSpeed } from "@/lib/exif";
+import { slugify, uniqueEventSlug } from "@/lib/slug";
 
 export type EventFormState = { error?: "validation" | "unknown"; ok?: boolean };
 
@@ -45,29 +46,6 @@ function parseEventForm(formData: FormData) {
   });
 }
 
-function slugify(input: string): string {
-  return input
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[^a-z0-9\s-]/g, "")
-    .trim()
-    .replace(/[\s_]+/g, "-")
-    .replace(/-+/g, "-")
-    .slice(0, 80);
-}
-
-async function uniqueSlug(base: string, excludeId?: string): Promise<string> {
-  const root = base || `event-${Date.now().toString(36)}`;
-  let candidate = root;
-  for (let i = 2; ; i++) {
-    const existing = await prisma.event.findUnique({
-      where: { slug: candidate }
-    });
-    if (!existing || existing.id === excludeId) return candidate;
-    candidate = `${root}-${i}`;
-  }
-}
-
 async function guard(): Promise<string> {
   const locale = await getLocale();
   if (!(await isAdmin())) redirect(`/${locale}/admin/login`);
@@ -102,7 +80,7 @@ export async function createEvent(
   const range = parseDateRange(d.dateStart, d.dateEnd);
   if (!range) return { error: "validation" };
 
-  const slug = await uniqueSlug(d.slug || slugify(d.titleEn || d.titleZh));
+  const slug = await uniqueEventSlug(d.slug || slugify(d.titleEn || d.titleZh));
   const event = await prisma.event.create({
     data: {
       slug,
@@ -137,7 +115,7 @@ export async function updateEvent(
   const existing = await prisma.event.findUnique({ where: { id } });
   if (!existing) return { error: "unknown" };
 
-  const slug = await uniqueSlug(
+  const slug = await uniqueEventSlug(
     d.slug || slugify(d.titleEn || d.titleZh),
     id
   );

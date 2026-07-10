@@ -3,7 +3,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/db";
 import { pickText } from "@/lib/content";
 import { formatDate } from "@/lib/datetime";
-import { getContactMethods } from "@/lib/settings";
+import { getContactMethods, getSiteSettings } from "@/lib/settings";
 import BookingForm, { type PublicSlot } from "@/components/booking/BookingForm";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +17,7 @@ export default async function BookPage({
   const locale = await getLocale();
   const t = await getTranslations("booking");
 
+  if (!(await getSiteSettings()).bookingEnabled) notFound();
   if (!/^[a-z0-9]+$/.test(token)) notFound();
 
   const event = await prisma.bookingEvent.findUnique({

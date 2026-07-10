@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/db";
 import { config } from "@/lib/config";
+import { getSiteSettings } from "@/lib/settings";
 import { formatSlotRange, formatDateTime } from "@/lib/datetime";
 import BookingEventForm from "@/components/admin/BookingEventForm";
 import SlotAdder from "@/components/admin/SlotAdder";
@@ -24,6 +25,7 @@ export default async function EditBookingEventPage({
   const { id, locale } = await params;
   const t = await getTranslations("adminBookings");
   const tc = await getTranslations("common");
+  const settings = await getSiteSettings();
 
   const event = await prisma.bookingEvent.findUnique({
     where: { id },
@@ -45,18 +47,22 @@ export default async function EditBookingEventPage({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">{t("editEvent")}</h1>
         <div className="flex items-center gap-3">
-          <LotteryEnabledToggle
-            bookingEventId={event.id}
-            defaultEnabled={event.lotteryEnabled}
-            label={t("lotteryEnabledLabel")}
-          />
-          {event.lotteryEnabled && (
-            <Link
-              href={`/admin/bookings/${event.id}/lottery`}
-              className="rounded-md border border-border-strong px-3 py-1.5 text-sm text-fg-muted transition hover:border-fg-faint hover:text-fg"
-            >
-              {t("lotteryTool")}
-            </Link>
+          {settings.lotteryEnabled && (
+            <>
+              <LotteryEnabledToggle
+                bookingEventId={event.id}
+                defaultEnabled={event.lotteryEnabled}
+                label={t("lotteryEnabledLabel")}
+              />
+              {event.lotteryEnabled && (
+                <Link
+                  href={`/admin/bookings/${event.id}/lottery`}
+                  className="rounded-md border border-border-strong px-3 py-1.5 text-sm text-fg-muted transition hover:border-fg-faint hover:text-fg"
+                >
+                  {t("lotteryTool")}
+                </Link>
+              )}
+            </>
           )}
           <form action={deleteBookingEvent}>
             <input type="hidden" name="id" value={event.id} />

@@ -16,6 +16,10 @@ export interface SiteSettings {
   backgroundColor: string;
   backgroundImage: string;
   logo: string;
+  bookingEnabled: boolean;
+  lotteryEnabled: boolean;
+  cosplayersEnabled: boolean;
+  setupCompleted: boolean;
 }
 
 const DEFAULTS: SiteSettings = {
@@ -28,7 +32,11 @@ const DEFAULTS: SiteSettings = {
   homeSubtitleZh: "",
   backgroundColor: "",
   backgroundImage: "",
-  logo: ""
+  logo: "",
+  bookingEnabled: true,
+  lotteryEnabled: true,
+  cosplayersEnabled: true,
+  setupCompleted: false
 };
 
 /**

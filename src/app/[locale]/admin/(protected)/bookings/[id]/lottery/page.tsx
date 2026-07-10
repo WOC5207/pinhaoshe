@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/db";
 import { config } from "@/lib/config";
 import { ensureLotteryDraw } from "@/lib/lottery";
+import { getSiteSettings } from "@/lib/settings";
 import { Link } from "@/i18n/navigation";
 import CopyButton from "@/components/admin/CopyButton";
 import LotteryOpenToggle, {
@@ -17,6 +18,9 @@ export default async function LotteryPage({
 }) {
   const { id, locale } = await params;
   const t = await getTranslations("adminLottery");
+
+  const settings = await getSiteSettings();
+  if (!settings.lotteryEnabled) redirect(`/${locale}/admin/bookings/${id}`);
 
   const bookingEvent = await prisma.bookingEvent.findUnique({ where: { id } });
   if (!bookingEvent) notFound();

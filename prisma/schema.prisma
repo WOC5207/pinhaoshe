@@ -160,6 +160,15 @@ model SiteSettings {
   // Logo shown in the admin header (links to the homepage). Empty = none.
   // Same token/storage scheme as backgroundImage.
   logo                String   @default("")
+  // Site-wide feature switches. Off hides the feature's nav links and
+  // homepage elements and blocks its public routes; admin management pages
+  // for existing data stay reachable so nothing already collected is lost.
+  bookingEnabled      Boolean  @default(true)
+  lotteryEnabled      Boolean  @default(true)
+  cosplayersEnabled   Boolean  @default(true)
+  // Flips to true once the first-run setup wizard (src/app/[locale]/admin/setup)
+  // finishes. While false, every /admin/(protected) route redirects there.
+  setupCompleted      Boolean  @default(false)
   updatedAt           DateTime @updatedAt
 }
 

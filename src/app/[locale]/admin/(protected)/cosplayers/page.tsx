@@ -1,11 +1,15 @@
-import { getTranslations } from "next-intl/server";
-import { getCosplayerRoster } from "@/lib/settings";
+import { getLocale, getTranslations } from "next-intl/server";
+import { redirect } from "next/navigation";
+import { getCosplayerRoster, getSiteSettings } from "@/lib/settings";
 import CosplayersManager, {
   type AdminCosplayer
 } from "@/components/admin/CosplayersManager";
 
 export default async function CosplayersPage() {
   const t = await getTranslations("adminCosplayers");
+  const locale = await getLocale();
+  const settings = await getSiteSettings();
+  if (!settings.cosplayersEnabled) redirect(`/${locale}/admin`);
   const roster = await getCosplayerRoster();
 
   const cosplayers: AdminCosplayer[] = roster.map((c) => ({

@@ -3,7 +3,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/db";
 import { pickText } from "@/lib/content";
 import { formatDate } from "@/lib/datetime";
-import { getContactMethods } from "@/lib/settings";
+import { getContactMethods, getSiteSettings } from "@/lib/settings";
 import LotteryEntryForm from "@/components/booking/LotteryEntryForm";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +17,7 @@ export default async function LotteryEntryPage({
   const locale = await getLocale();
   const t = await getTranslations("lotteryEntry");
 
+  if (!(await getSiteSettings()).lotteryEnabled) notFound();
   if (!/^[a-z0-9]+$/.test(token)) notFound();
 
   const draw = await prisma.lotteryDraw.findUnique({

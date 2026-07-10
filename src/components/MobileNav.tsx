@@ -13,7 +13,13 @@ export interface MobileNavLabels {
   toggleTheme: string;
 }
 
-export default function MobileNav({ labels }: { labels: MobileNavLabels }) {
+export default function MobileNav({
+  labels,
+  showBooking = true
+}: {
+  labels: MobileNavLabels;
+  showBooking?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -62,9 +68,11 @@ export default function MobileNav({ labels }: { labels: MobileNavLabels }) {
           <Link href="/gallery" onClick={() => setOpen(false)} className={linkClass}>
             {labels.gallery}
           </Link>
-          <Link href="/booking" onClick={() => setOpen(false)} className={linkClass}>
-            {labels.booking}
-          </Link>
+          {showBooking && (
+            <Link href="/booking" onClick={() => setOpen(false)} className={linkClass}>
+              {labels.booking}
+            </Link>
+          )}
           <Link href="/admin" onClick={() => setOpen(false)} className={linkClass}>
             {labels.admin}
           </Link>

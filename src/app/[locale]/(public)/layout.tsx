@@ -53,9 +53,11 @@ export default async function PublicLayout({
             <Link href="/gallery" className="text-fg-muted hover:text-fg">
               {t("nav.gallery")}
             </Link>
-            <Link href="/booking" className="text-fg-muted hover:text-fg">
-              {t("nav.booking")}
-            </Link>
+            {settings.bookingEnabled && (
+              <Link href="/booking" className="text-fg-muted hover:text-fg">
+                {t("nav.booking")}
+              </Link>
+            )}
             <LanguageSwitcher />
             <ThemeToggle label={t("common.toggleTheme")} />
             <Link
@@ -73,6 +75,7 @@ export default async function PublicLayout({
               menu: t("nav.menu"),
               toggleTheme: t("common.toggleTheme")
             }}
+            showBooking={settings.bookingEnabled}
           />
         </div>
       </header>

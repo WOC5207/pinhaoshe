@@ -11,6 +11,7 @@ import { config } from "@/lib/config";
 import { rateLimit } from "@/lib/rate-limit";
 import { pickText } from "@/lib/content";
 import { notifyBookingCreated } from "@/lib/notify";
+import { getSiteSettings } from "@/lib/settings";
 
 export type BookingFormState = {
   error?:
@@ -34,6 +35,8 @@ export async function createBooking(
   _prev: BookingFormState,
   formData: FormData
 ): Promise<BookingFormState> {
+  if (!(await getSiteSettings()).bookingEnabled) return { error: "closed" };
+
   const h = await headers();
   const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "local";
   if (!rateLimit(`book:${ip}`, { limit: 8, windowMs: 60 * 60 * 1000 })) {

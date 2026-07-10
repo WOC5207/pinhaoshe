@@ -47,17 +47,21 @@ export default async function HomePage() {
         }
       }
     }),
-    prisma.bookingEvent.findMany({
-      where: { open: true, date: { gte: today } },
-      orderBy: [{ date: "asc" }, { createdAt: "asc" }],
-      include: {
-        slots: {
+    settings.bookingEnabled
+      ? prisma.bookingEvent.findMany({
+          where: { open: true, date: { gte: today } },
+          orderBy: [{ date: "asc" }, { createdAt: "asc" }],
           include: {
-            _count: { select: { bookings: { where: { status: "confirmed" } } } }
+            slots: {
+              include: {
+                _count: {
+                  select: { bookings: { where: { status: "confirmed" } } }
+                }
+              }
+            }
           }
-        }
-      }
-    }),
+        })
+      : Promise.resolve([]),
     getPersonalLinks()
   ]);
 
@@ -122,12 +126,14 @@ export default async function HomePage() {
           >
             {t("browseGallery")}
           </Link>
-          <Link
-            href="/booking"
-            className="rounded-full border border-border-strong px-6 py-3 text-sm font-semibold text-fg-muted transition hover:border-fg-faint hover:text-fg"
-          >
-            {t("bookingButton")}
-          </Link>
+          {settings.bookingEnabled && (
+            <Link
+              href="/booking"
+              className="rounded-full border border-border-strong px-6 py-3 text-sm font-semibold text-fg-muted transition hover:border-fg-faint hover:text-fg"
+            >
+              {t("bookingButton")}
+            </Link>
+          )}
         </div>
       </section>
 
@@ -142,7 +148,9 @@ export default async function HomePage() {
         </section>
 
         <aside className="order-first flex flex-col gap-6 lg:order-none">
-          <BookingCalendar sessions={calendarSessions} />
+          {settings.bookingEnabled && (
+            <BookingCalendar sessions={calendarSessions} />
+          )}
           <QuickStats
             stats={siteStats}
             title={t("quickStatsTitle")}
