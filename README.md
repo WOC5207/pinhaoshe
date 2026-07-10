@@ -71,7 +71,7 @@ and run: `openssl rand -base64 32`
    (`/volume1/docker/pinhaoshe`). It will detect `docker-compose.yml`.
 3. Click through and **Build**. The first build downloads images and compiles
    the app — expect **5–15 minutes** on a DS920+. Later rebuilds are faster.
-4. When the project is running, the app listens on **port 3000**. The
+4. When the project is running, the app listens on **port 3312**. The
    `data/photos` and `data/db` folders (already present next to the compose
    file from the repo) are your persistent volumes; the container itself is
    disposable.
@@ -90,7 +90,7 @@ and create the project as above.
 
 ### 4. First run
 
-1. Visit `http://<NAS-IP>:3000/zh/admin/login` (or `/en/admin/login`).
+1. Visit `http://<NAS-IP>:3312/zh/admin/login` (or `/en/admin/login`).
 2. Log in with `ADMIN_USERNAME` / `ADMIN_PASSWORD` — this first login creates
    the admin account.
 3. Create a gallery event, upload photos, publish. Create a booking event, add
@@ -103,7 +103,7 @@ public URL (`APP_BASE_URL`).
 
 1. **Control Panel → Login Portal → Advanced → Reverse Proxy → Create**:
    - Source: HTTPS, your hostname (e.g. `photos.example.com`), port 443
-   - Destination: HTTP, `localhost`, port 3000
+   - Destination: HTTP, `localhost`, port 3312
 2. Make sure the hostname has a valid certificate
    (**Control Panel → Security → Certificate**).
 3. Set `APP_BASE_URL` in `.env` to `https://photos.example.com`, then in

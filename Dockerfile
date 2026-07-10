@@ -25,7 +25,7 @@ ENV NEXT_TELEMETRY_DISABLED=1 \
 ENV DATABASE_URL="file:/tmp/build.db" \
     PHOTOS_DIR="/tmp/photos" \
     SESSION_SECRET="build-time-placeholder-secret-not-used" \
-    APP_BASE_URL="http://localhost:3000"
+    APP_BASE_URL="http://localhost:3312"
 RUN npx prisma generate && npm run build
 
 # ---- Stage 3: runtime -------------------------------------------------
@@ -34,7 +34,7 @@ WORKDIR /app
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     HOSTNAME=0.0.0.0 \
-    PORT=3000
+    PORT=3312
 
 # Standalone server + static assets
 # (no COPY for /app/public — this project has no Next.js public/ folder;
@@ -60,5 +60,5 @@ COPY docker-entrypoint.sh ./docker-entrypoint.sh
 # confusing "no such file or directory" instead of a syntax error.
 RUN sed -i 's/\r$//' ./docker-entrypoint.sh && chmod +x ./docker-entrypoint.sh
 
-EXPOSE 3000
+EXPOSE 3312
 ENTRYPOINT ["./docker-entrypoint.sh"]

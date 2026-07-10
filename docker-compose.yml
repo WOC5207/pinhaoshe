@@ -5,7 +5,7 @@ services:
     restart: unless-stopped
     ports:
       # DSM reverse proxy should forward HTTPS traffic to this port.
-      - "3000:3000"
+      - "3312:3312"
     env_file:
       - .env
     environment:
